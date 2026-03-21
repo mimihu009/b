@@ -1,275 +1,179 @@
 <!DOCTYPE html>
 <html>
-<head><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<meta charset="UTF-8">
-<title>For you 💖</title>
-<style>
-canvas {
-    background: #fff0f5;
-    display: block;
-    margin: auto;
-}
-</style>
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Find My Girl 💖</title>
+    <style>
+        body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { background: #3d3d3d; border: 4px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; }
+    </style>
 </head>
 <body>
 
-<canvas id="game" width="500" height="300"></canvas>
+<canvas id="game" width="600" height="400"></canvas>
 
 <script>
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 
-// ===== SCENE =====
+// ===== 1. TÀI NGUYÊN =====
+let idleImg = new Image(); idleImg.src = "1.png";
+let hit1Img = new Image(); hit1Img.src = "2.png";
+let hit2Img = new Image(); hit2Img.src = "3.png";
+let planeImg = new Image(); planeImg.src = "plane.png"; 
+let hitSound = new Audio("hit.mp3");
+
+// ===== 2. BIẾN GAME =====
 let scene = 1;
-let choiceScene = false;
-let idle = new Image();
-idle.src = "idle.png";
-
-let hit1 = new Image();
-hit1.src = "hit1.png";
-
-let hit2 = new Image();
-hit2.src = "hit2.png";
-
-// ===== MÀN 1 =====
 let money = 0;
-let coins = [];
+let animTime = 0;
+let particles = [];
 
-// ===== MÀN 2 =====
-let playerY = 150;
-let obstacle = {
-    x: 500,
-    y: 150,
-    size: 30,
-    speedX: 5,
-    speedY: 2
-};
-let startTime = Date.now();
-let velocity = 0;
-let gravity = 0.5;
+// Màn 2: Bay
+let planeY = 200, planeV = 0, gravity = 0.4;
+let obstacles = [];
+let progress = 0;
 
-// ===== MINI GAME =====
-let characters = [];
-let correctIndex = Math.floor(Math.random() * 4);
-let result = "";
+// Màn 2.5: Tìm bạn gái
+let girls = [];
+let correctGirlIndex = 0;
+let feedbackText = "";
+let feedbackTime = 0;
 
-// ===== MÀN 3 =====
-let playerX = 50;
+// Màn 3: Gặp nhau
+let boyX = 50, girlX = 510, hearts = [];
 let met = false;
-let hugging = false;
-let hearts = [];
 
-// ===== TẠO NHÂN VẬT MINI GAME =====
-function createCharacters() {
-    characters = [];
-    for (let i = 0; i < 4; i++) {
-        characters.push({
-            x: 60 + i * 100,
-            y: 150,
-            size: 40
+// Khởi tạo 4 cô gái cho màn mini-game
+function initMiniGame() {
+    girls = [];
+    correctGirlIndex = Math.floor(Math.random() * 4);
+    for(let i=0; i<4; i++) {
+        girls.push({
+            x: 80 + i * 120,
+            y: 200,
+            color: (i === correctGirlIndex) ? "#ff69b4" : "#555", // Màu hồng là đúng, xám là sai
+            isReal: (i === correctGirlIndex)
         });
     }
 }
 
-// ===== CLICK =====
-canvas.addEventListener("click", (e) => {
-    if (scene === 1) {
-    money++;
-
-    // tạo đồng tiền tại vị trí click
-    let rect = canvas.getBoundingClientRect();
-    let x = event.clientX - rect.left;
-    let y = event.clientY - rect.top;
-
-    coins.push({
-        x: x,
-        y: y,
-        size: 15,
-        speed: 1 + Math.random() * 2,
-        alpha: 1
-    });
-}
-    if (scene !== 3) return;
-
+// ===== 3. XỬ LÝ CLICK =====
+canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
     let mouseX = e.clientX - rect.left;
     let mouseY = e.clientY - rect.top;
 
-    characters.forEach((c, i) => {
-        if (
-            mouseX > c.x &&
-            mouseX < c.x + c.size &&
-            mouseY > c.y &&
-            mouseY < c.y + c.size
-        ) {
-            if (i === correctIndex) {
-                result = "congrats 💖";
-                setTimeout(() => {
-                    scene = 4;
-                }, 1000);
-            } else {
-                result = "you're failed 😭";
-            }
-        }
-    });
-});
-
-// ===== KEY =====
-document.addEventListener("keydown", (e) => {
-   if (scene === 2 && e.key === "ArrowUp") {
-    velocity = -6;
-}
-});
-
-// ===== GAME LOOP =====
-function draw() {
-    ctx.clearRect(0,0,500,300);
-ctx.font = "12px 'Press Start 2P'";
-ctx.fillStyle = "black";
-
-    // ===== MÀN 1 =====
     if (scene === 1) {
-  
-coins.forEach((c, i) => {
-    ctx.globalAlpha = c.alpha;
-    ctx.fillStyle = "gold";
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-    ctx.fill();
-
-    // bay lên
-    c.y -= c.speed;
-
-    // mờ dần
-    c.alpha -= 0.02;
-
-    // xoá khi biến mất
-    if (c.alpha <= 0) {
-        coins.splice(i, 1);
+        money++;
+        animTime = 12;
+        hitSound.currentTime = 0;
+        hitSound.play().catch(()=>{});
+        for(let i=0; i<5; i++) particles.push({x: 300, y: 250, sx: (Math.random()-0.5)*10, sy: (Math.random()-1)*12, life: 1});
+        if (money >= 10) setTimeout(() => { scene = 2; }, 500);
+    }
+    else if (scene === 2) {
+        planeV = -7;
+    }
+    else if (scene === 2.5) {
+        girls.forEach((g, index) => {
+            if (mouseX > g.x && mouseX < g.x + 50 && mouseY > g.y && mouseY < g.y + 80) {
+                if (g.isReal) {
+                    feedbackText = "ĐÚNG RỒI! YÊU THẾ 💖";
+                    feedbackTime = 60;
+                    setTimeout(() => { scene = 3; }, 1000);
+                } else {
+                    feedbackText = "SAI RỒI! HUHU 😭";
+                    feedbackTime = 60;
+                }
+            }
+        });
     }
 });
 
-ctx.globalAlpha = 1;
-        ctx.fillText("Working: " + money, 20, 30);
-        ctx.fillText("Click to work 💼", 140, 150);
+// ===== 4. VÒNG LẶP VẼ =====
+function draw() {
+    ctx.clearRect(0, 0, 600, 400);
+    ctx.font = "10px 'Press Start 2P'";
 
-        if (money >= 10) {
-            scene = 2;
-            startTime = Date.now();
-        }
-    }
-
-    // ===== MÀN 2 =====
-    else if (scene === 2) {
-velocity += gravity;
-playerY += velocity;
-if (playerY < 0) playerY = 0;
-if (playerY > 270) playerY = 270;
-        ctx.fillText("You've got a flight ticket! ✈️", 20, 30);
-
-        // player
-        ctx.fillRect(50, playerY, 30, 30);
-
-        // obstacle
-        // di chuyển
-obstacle.x -= obstacle.speedX;
-obstacle.y += obstacle.speedY;
-
-// đổi hướng lên xuống
-if (obstacle.y <= 0 || obstacle.y >= 270) {
-    obstacle.speedY *= -1;
-}
-
-// reset khi ra ngoài
-if (obstacle.x < 0) {
-    obstacle.x = 500;
-    obstacle.y = Math.random() * 250;
-}
-
-// vẽ
-ctx.fillRect(obstacle.x, obstacle.y, obstacle.size, obstacle.size);
-        // qua mini game sau 10s
-       if (Date.now() - startTime > 10000) {
-    scene = 3;
-    createCharacters();
-}
-    }
-
-    // ===== MINI GAME =====
-    else if (scene === 3) {
-    ctx.fillText("Choose the right one 😏", 120, 80);
-
-    characters.forEach((c, i) => {
-        ctx.fillStyle = (i === correctIndex) ? "pink" : "gray";
-        ctx.fillRect(c.x, c.y, c.size, c.size);
-    });
-
-    ctx.fillStyle = "black";
-    ctx.fillText(result, 150, 50);
-
-    if (result.includes("wrong")) {
-        ctx.fillText("you're failed 😭", 160, 120);
-    }
-}
-    
-
-    // ===== MÀN 3 =====
-    else if (scene === 4) {
-        ctx.fillText("going to see your GF 💖", 20, 30);
-
-        if (!met) {
-            playerX += 1;
-            if (playerX > 340) met = true;
-        } else {
-            hugging = true;
-        }
-
-        // player
-        ctx.fillStyle = "blue";
-        ctx.fillRect(playerX, 200, 30, 30);
-
-        // lover
-        ctx.fillStyle = "pink";
-        ctx.fillRect(400, 200, 30, 30);
-
-        // ôm nhau
-        if (hugging) {
-            if (playerX < 370) playerX += 0.5;
-        }
-
-        // 💖 tạo trái tim
-        if (hugging && Math.random() < 0.1) {
-            hearts.push({
-                x: 380,
-                y: 200,
-                size: 10,
-                speed: Math.random() * 2 + 1
-            });
-        }
-
-        // 💖 vẽ trái tim
-        hearts.forEach((h, i) => {
-            ctx.fillStyle = "red";
-            ctx.fillRect(h.x, h.y, h.size, h.size);
-            h.y -= h.speed;
-
-            if (h.y < 0) hearts.splice(i, 1);
+    // --- MÀN 1: ĐÀO TIỀN ---
+    if (scene === 1) {
+        ctx.fillStyle = "white";
+        ctx.fillText("MONEY: $" + money + " / 10", 20, 40);
+        ctx.fillText("CLICK TO WORK!", 220, 100);
+        particles.forEach((p, i) => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 5, 5);
+            p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.03;
+            if(p.life <= 0) particles.splice(i, 1);
         });
+        ctx.globalAlpha = 1;
+        let img = (animTime > 8) ? hit1Img : (animTime > 0) ? hit2Img : idleImg;
+        if (img.complete) ctx.drawImage(img, 260, 220, 80, 80);
+        else { ctx.fillStyle = "blue"; ctx.fillRect(280, 240, 40, 60); }
+        if (animTime > 0) animTime--;
+    }
 
-        // 💌 lời chúc
-        if (hugging) {
-            ctx.fillStyle = "black";
-            ctx.font = "12px 'Press Start 2P'";
-            ctx.fillText("Happy birthday cutie pie!! 💖", 100, 100);
-            ctx.fillText("We finally meet...", 80, 130);
+    // --- MÀN 2: BAY ---
+    else if (scene === 2) {
+        ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 600, 400);
+        planeV += gravity; planeY += planeV;
+        if (planeImg.complete) ctx.drawImage(planeImg, 50, planeY, 60, 40);
+        else { ctx.fillStyle = "white"; ctx.fillRect(50, planeY, 50, 30); }
+        
+        if (Math.random() < 0.03) obstacles.push({x: 600, y: Math.random()*350, w: 60, h: 30});
+        obstacles.forEach((o, i) => {
+            o.x -= 5; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillRect(o.x, o.y, o.w, o.h);
+            if (o.x < 100 && o.x > 50 && Math.abs(o.y - planeY) < 30) { progress -= 10; obstacles.splice(i, 1); }
+        });
+        progress += 0.5;
+        ctx.fillStyle = "white"; ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 20, 40);
+        if (progress >= 100) { scene = 2.5; initMiniGame(); }
+    }
+
+    // --- MÀN 2.5: MINI GAME CHỌN BẠN GÁI ---
+    else if (scene === 2.5) {
+        ctx.fillStyle = "#3d3d3d"; ctx.fillRect(0, 0, 600, 400);
+        ctx.fillStyle = "white";
+        ctx.fillText("AI LÀ NGƯỜI YÊU CỦA BẠN?", 150, 100);
+        
+        if (feedbackTime > 0) {
+            ctx.fillStyle = feedbackText.includes("HUHU") ? "red" : "lime";
+            ctx.fillText(feedbackText, 200, 150);
+            feedbackTime--;
         }
+
+        girls.forEach((g) => {
+            ctx.fillStyle = g.color;
+            ctx.fillRect(g.x, g.y, 50, 80); // Hình nhân vật nữ
+            ctx.fillStyle = "white";
+            ctx.fillText("?", g.x + 20, g.y + 40);
+        });
+    }
+
+    // --- MÀN 3: GẶP NHAU ---
+    else if (scene === 3) {
+        ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 600, 400);
+        if (!met) {
+            boyX += 2; girlX -= 2;
+            if (boyX >= girlX - 45) met = true;
+        } else {
+            if (Math.random() < 0.15) hearts.push({x: boyX+40, y: 250, sx: (Math.random()-0.5)*5, sy: -4, life: 1});
+            ctx.fillStyle = "white"; ctx.fillText("HẠ CÁNH NƠI ANH 💖", 200, 150);
+        }
+        if (idleImg.complete) ctx.drawImage(idleImg, boyX, 240, 60, 60);
+        ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 240, 40, 60);
+        hearts.forEach((h, i) => {
+            ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
+            h.x += h.sx; h.y += h.sy; h.life -= 0.02;
+            if(h.life <= 0) hearts.splice(i, 1);
+        });
+        ctx.globalAlpha = 1;
     }
 
     requestAnimationFrame(draw);
 }
-
 draw();
 </script>
-
 </body>
 </html>
