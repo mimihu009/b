@@ -166,23 +166,62 @@ function draw() {
             else { ctx.fillStyle = g.isReal ? "#ff69b4" : "#555"; ctx.fillRect(g.x, g.y, g.w, g.h); }
         });
     }
+else if (scene === 3) {
+    ctx.fillStyle = "#ffb6c1"; // Nền hồng lãng mạn
+    ctx.fillRect(0, 0, 800, 500);
 
-    else if (scene === 3) {
-        ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
-        if (!met) { boyX += 3; girlX -= 3; if (boyX >= girlX - 100) met = true; }
-        else {
-            if (Math.random() < 0.2) hearts.push({x: boyX+60, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
-            ctx.fillStyle = "white"; ctx.fillText("FINALLY MEET 💖", 270, 180);
+    if (!met) {
+        // Hoạt ảnh đi bộ lại gần nhau (Tăng tốc độ lên 3)
+        boyX += 3; 
+        girlX -= 3;
+        // Kiểm tra va chạm (ôm nhau)
+        if (boyX >= girlX - 100) met = true;
+    } else {
+        // Khi đã gặp nhau, tạo trái tim bay tung tóe (Tăng tỉ lệ thả tim)
+        if (Math.random() < 0.2) {
+            hearts.push({
+                x: boyX + 70, // Tim bay ra từ giữa
+                y: 250, 
+                sx: (Math.random() - 0.5) * 8, 
+                sy: -5, 
+                life: 1
+            });
         }
-        if (idleImg.complete) ctx.drawImage(idleImg, boyX, 260, 140, 140);
-        if (girlRealImg.complete && girlRealImg.naturalWidth !== 0) ctx.drawImage(girlRealImg, girlX, 280, 100, 140);
-        else { ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 280, 100, 140); }
-        hearts.forEach((h, i) => {
-            ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
-            h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
-        });
-        ctx.globalAlpha = 1;
+        ctx.fillStyle = "white"; ctx.fillText("I'M HERE NOW! 💖", 290, 180);
     }
+
+    // --- Vẽ Nhân Vật Nam Final (Bự: 150x150) ---
+    // Kiểm tra xem ảnh boy_final.png đã load xong chưa
+    let boyImg = new Image(); boyImg.src = "boy_final.png"; // Load ảnh final
+    if (boyImg.complete && boyImg.naturalWidth !== 0) {
+        ctx.drawImage(boyImg, boyX, 240, 150, 150);
+    } else {
+        // Ô vuông dự phòng (màu xanh dương)
+        ctx.fillStyle = "blue";
+        ctx.fillRect(boyX, 260, 60, 100);
+    }
+
+    // --- Vẽ Nhân Vật Nữ Final (Bự: 150x150) ---
+    // Kiểm tra xem ảnh girl_final.png đã load xong chưa
+    let girlImg = new Image(); girlImg.src = "girl_final.png"; // Load ảnh final
+    if (girlImg.complete && girlImg.naturalWidth !== 0) {
+        ctx.drawImage(girlImg, girlX, 240, 150, 150);
+    } else {
+        // Ô vuông dự phòng (màu hồng)
+        ctx.fillStyle = "#ff69b4"; 
+        ctx.fillRect(girlX, 260, 60, 100);
+    }
+
+    // --- Trái tim (Giữ nguyên) ---
+    hearts.forEach((h, i) => {
+        ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
+        h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
+    });
+    ctx.globalAlpha = 1;
+}
+// ========================================================
+
+// ... (phần code draw() và vòng lặp giữ nguyên) ...
     requestAnimationFrame(draw);
 }
 draw();
