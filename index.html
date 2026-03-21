@@ -3,35 +3,31 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>Our Love💖</title>
+    <title>love💖</title>
     <style>
         body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Press Start 2P', cursive; }
-        canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; }
-
-        /* CSS POP-UP */
+        canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; position: relative; z-index: 1; }
+        
+        /* CSS CHO POP-UP */
         #popup-overlay {
-            display: none; /* Mặc định ẩn */
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); z-index: 9999;
-            justify-content: center; align-items: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; cursor: pointer;
         }
         #popup-content {
-            background: white; padding: 20px; border-radius: 20px;
-            border: 8px solid #ffb6c1; text-align: center; max-width: 80%;
-            animation: popShow 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white; padding: 15px; border-radius: 20px; border: 8px solid #ffb6c1;
+            text-align: center; max-width: 80%; animation: zoomIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #popup-img { max-width: 100%; max-height: 60vh; border-radius: 10px; display: block; margin: 0 auto 15px; }
-        #popup-text { color: #ff69b4; font-size: 18px; margin-bottom: 10px; }
-        @keyframes popShow { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        #popup-img { max-width: 100%; max-height: 70vh; border-radius: 10px; display: block; margin: 0 auto 15px; }
+        #popup-text { color: #ff69b4; font-size: 14px; line-height: 1.5; }
+        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="popup-overlay" onclick="this.style.display='none'">
-        <div id="popup-content" onclick="event.stopPropagation()">
-            <img id="popup-img" src="together.jpg" onerror="this.src='https://via.placeholder.com/400x300?text=Anh+Loi+Roi+Ma+Oi'">
-            <div id="popup-text">TOGETHER FOREVER 💖</div>
-            <button onclick="document.getElementById('popup-overlay').style.display='none'" style="font-family:'Press Start 2P'; padding:10px; border:none; background:#ffb6c1; cursor:pointer;">CLOSE</button>
+        <div id="popup-content">
+            <img id="popup-img" src="together.png" alt="happy birthday together!">
+            <div id="popup-text">TOGETHER FOREVER 💖<br><br><span style="font-size:8px;">(Click để quay lại game)</span></div>
         </div>
     </div>
 
@@ -41,44 +37,49 @@
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 
-// 1. TÀI NGUYÊN
+// ===== 1. TÀI NGUYÊN =====
 let idleImg = new Image(); idleImg.src = "1.png";
 let hit1Img = new Image(); hit1Img.src = "2.png";
 let hit2Img = new Image(); hit2Img.src = "3.png";
 let planeImg = new Image(); planeImg.src = "plane.png";
-let boyFinal = new Image(); boyFinal.src = "boy_final.png";
-let girlFinal = new Image(); girlFinal.src = "girl_final.png";
-let girlReal = new Image(); girlReal.src = "girl_real.png";
-let troll1 = new Image(); troll1.src = "girl_troll1.png";
-let troll2 = new Image(); troll2.src = "girl_troll2.png";
-let troll3 = new Image(); troll3.src = "girl_troll3.png";
+let girlRealImg = new Image(); girlRealImg.src = "girl_real.png";
+let girlTroll1Img = new Image(); girlTroll1Img.src = "girl_troll1.png";
+let girlTroll2Img = new Image(); girlTroll2Img.src = "girl_troll2.png";
+let girlTroll3Img = new Image(); girlTroll3Img.src = "girl_troll3.png";
 
-// 2. BIẾN
-let scene = 1, money = 0, targetMoney = 10, animTime = 0, particles = [];
+// ===== 2. BIẾN GAME =====
+let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
 let planeY = 250, planeV = 0, gravity = 0.4, obstacles = [], progress = 0, gameOverM2 = false;
-let girls = [], feedbackText = "", feedbackTime = 0, boyX = 50, girlX = 650, hearts = [], met = false;
+let girls = [], feedbackText = "", feedbackTime = 0;
+let boyX = 50, girlX = 650, hearts = [], met = false;
+let hasShowedPopup = false; // Chốt chặn quan trọng!
 
 function initMiniGame() {
     girls = [];
     let correct = Math.floor(Math.random() * 4);
-    let trolls = [troll1, troll2, troll3].sort(() => Math.random() - 0.5);
-    let tIdx = 0;
+    let trolls = [girlTroll1Img, girlTroll2Img, girlTroll3Img].sort(() => Math.random() - 0.5);
+    let tCount = 0;
     for(let i=0; i<4; i++) {
         let isR = (i === correct);
-        girls.push({ x: 80+i*180, y: 200, w: 140, h: 200, img: isR?girlReal:trolls[tIdx++], isReal: isR });
+        girls.push({ x: 80 + i * 180, y: 200, w: 140, h: 200, img: isR ? girlRealImg : trolls[tCount++], isReal: isR });
     }
 }
 
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
-    let mx = e.clientX - rect.left; let my = e.clientY - rect.top;
-    if (scene === 1) { money++; animTime = 12; if (money >= targetMoney) scene = 2; }
-    else if (scene === 2) { if (gameOverM2) { planeY=250; planeV=0; obstacles=[]; progress=0; gameOverM2=false; } else planeV = -8; }
-    else if (scene === 2.5) {
+    let mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (scene === 1) {
+        money++; animTime = 12;
+        for(let i=0; i<5; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*10, sy: (Math.random()-1)*10, life: 1});
+        if (money >= targetMoney) scene = 2;
+    } else if (scene === 2) {
+        if (gameOverM2) { planeY = 250; planeV = 0; obstacles = []; progress = 0; gameOverM2 = false; }
+        else planeV = -8;
+    } else if (scene === 2.5) {
         girls.forEach(g => {
             if (mx > g.x && mx < g.x+g.w && my > g.y && my < g.y+g.h) {
-                if (g.isReal) { feedbackText="RIGHT!💖"; feedbackTime=60; setTimeout(()=>scene=3, 1000); }
-                else { feedbackText="WRONG!😭"; feedbackTime=60; }
+                if (g.isReal) { feedbackText = "RIGHT! 💖"; feedbackTime = 40; setTimeout(()=>scene=3, 800); }
+                else { feedbackText = "WRONG! 😭"; feedbackTime = 40; }
             }
         });
     }
@@ -89,47 +90,60 @@ function draw() {
     ctx.font = "12px 'Press Start 2P'";
 
     if (scene === 1) {
-        ctx.fillStyle="gold"; ctx.fillText("MONEY: $"+money, 30, 50);
+        ctx.fillStyle = "white"; ctx.fillText("MONEY: " + money + "/" + targetMoney, 30, 50);
+        particles.forEach((p, i) => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 5, 5);
+            p.x += p.sx; p.y += p.sy; p.sy += 0.4; p.life -= 0.02;
+            if(p.life <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1;
         let img = (animTime > 8) ? hit1Img : (animTime > 0) ? hit2Img : idleImg;
         if (img.complete) ctx.drawImage(img, 310, 250, 180, 180);
         if (animTime > 0) animTime--;
     } 
     else if (scene === 2) {
-        ctx.fillStyle="#87CEEB"; ctx.fillRect(0,0,800,500);
+        ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500);
         if (!gameOverM2) {
             planeV += gravity; planeY += planeV; progress += 0.3;
-            if (Math.random() < 0.04) obstacles.push({x: 800, y: Math.random()*400, w: 90, h: 50});
+            if (Math.random() < 0.04) obstacles.push({x: 800, y: Math.random()*400, w: 80, h: 40});
             obstacles.forEach((o, i) => {
-                o.x -= 6; ctx.fillStyle="white"; ctx.fillRect(o.x, o.y, o.w, o.h);
+                o.x -= 5; ctx.fillStyle = "white"; ctx.fillRect(o.x, o.y, o.w, o.h);
                 if (o.x < 180 && o.x+o.w > 80 && o.y < planeY+60 && o.y+o.h > planeY+20) gameOverM2 = true;
+                if (o.x < -100) obstacles.splice(i, 1);
             });
             if (planeY > 450 || planeY < -50) gameOverM2 = true;
             if (progress >= 100) { scene = 2.5; initMiniGame(); }
         }
         if (planeImg.complete) ctx.drawImage(planeImg, 80, planeY, 120, 80);
+        ctx.fillStyle = "white"; ctx.fillText("GO TO HER: " + Math.floor(progress) + "%", 30, 50);
         if (gameOverM2) ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
     } 
     else if (scene === 2.5) {
-        ctx.fillStyle="#222"; ctx.fillRect(0,0,800,500);
-        ctx.fillStyle="white"; ctx.fillText("WHO IS YOUR GIRL?", 250, 100);
-        if (feedbackTime > 0) { ctx.fillText(feedbackText, 350, 150); feedbackTime--; }
-        girls.forEach(g => { if (g.img.complete) ctx.drawImage(g.img, g.x, g.y, g.w, g.h); });
+        ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500);
+        ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR GIRL?", 250, 80);
+        if (feedbackTime > 0) { ctx.fillText(feedbackText, 350, 140); feedbackTime--; }
+        girls.forEach(g => {
+            if (g.img.complete) ctx.drawImage(g.img, g.x, g.y, g.w, g.h);
+        });
     } 
     else if (scene === 3) {
-        ctx.fillStyle="#ffb6c1"; ctx.fillRect(0,0,800,500);
+        ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
         if (!met) {
-            boyX += 3; girlX -= 3;
-            if (boyX >= girlX - 100) { 
-                met = true; 
-                document.getElementById('popup-overlay').style.display = 'flex'; // HIỆN POPUP
-                console.log("Pop-up triggered!"); 
+            boyX += 2; girlX -= 2;
+            if (boyX >= girlX - 100) {
+                met = true;
+                // HIỆN POP-UP CHỖ NÀY
+                if(!hasShowedPopup) {
+                    document.getElementById('popup-overlay').style.display = 'flex';
+                    hasShowedPopup = true;
+                }
             }
         } else {
-            if (Math.random() < 0.2) hearts.push({x: boyX+70, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
-            ctx.fillStyle="white"; ctx.fillText("FINALLY! 💖", 330, 150);
+            if (Math.random() < 0.1) hearts.push({x: boyX+60, y: 250, sx: (Math.random()-0.5)*5, sy: -4, life: 1});
+            ctx.fillStyle = "white"; ctx.fillText("FINALLY! 💖", 330, 150);
         }
-        if (boyFinal.complete) ctx.drawImage(boyFinal, boyX, 240, 150, 150);
-        if (girlFinal.complete) ctx.drawImage(girlFinal, girlX, 240, 150, 150);
+        if (idleImg.complete) ctx.drawImage(idleImg, boyX, 260, 140, 140);
+        if (girlRealImg.complete) ctx.drawImage(girlRealImg, girlX, 280, 100, 140);
         hearts.forEach((h, i) => {
             ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
             h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
