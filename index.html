@@ -3,15 +3,73 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>Long Distance Flight ✈️</title>
+    <title>HAPPY BIRTHDAY</title>
     <style>
         body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Press Start 2P', cursive; }
         canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; }
+    /* ... các đoạn CSS cũ giữ nguyên ... */
+    
+    /* --- CSS cho vùng nền mờ của Pop-up --- */
+    #popup-overlay {
+        display: none; /* Ẩn mặc định */
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); /* Nền đen mờ 80% */
+        z-index: 1000; /* Hiển thị trên cùng */
+        justify-content: center;
+        align-items: center;
+        cursor: pointer; /* Click để ẩn */
+    }
+
+    /* --- CSS cho khung chứa ảnh Pop-up --- */
+    #popup-content {
+        background-color: white;
+        padding: 10px;
+        border-radius: 15px;
+        border: 5px solid #ffb6c1; /* Viền hồng */
+        box-shadow: 0 0 20px rgba(255, 182, 193, 0.5);
+        max-width: 80%;
+        max-height: 80%;
+        text-align: center;
+        /* Hoạt ảnh hiện lên nhẹ nhàng */
+        animation: popupAnimate 0.5s ease-out;
+    }
+
+    /* --- CSS cho ảnh bên trong Pop-up --- */
+    #popup-img {
+        max-width: 100%;
+        max-height: 70vh; /* Giới hạn chiều cao ảnh */
+        border-radius: 10px;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* --- CSS cho dòng chữ dưới ảnh --- */
+    #popup-text {
+        font-family: 'Press Start 2P', cursive;
+        font-size: 16px;
+        color: #ff69b4;
+        margin: 10px 0;
+    }
+
+    /* Hoạt ảnh hiện lên */
+    @keyframes popupAnimate {
+        from { transform: scale(0.5); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
     </style>
 </head>
 <body>
+    <div id="popup-overlay" onclick="hidePopup()">
+        <div id="popup-content" onclick="event.stopPropagation()"> <img id="popup-img" src="together.jpg" alt="Together Forever">
+            <div id="popup-text">TOGETHER FOREVER 💖</div>
+            <div style="font-size: 10px; color: #555;">(Click anywhere to close)</div>
+        </div>
+    </div>
 
-<canvas id="game" width="800" height="500"></canvas>
+    <canvas id="game" width="800" height="500"></canvas>
 
 <script>
 let canvas = document.getElementById("game");
@@ -167,15 +225,20 @@ function draw() {
         });
     }
 else if (scene === 3) {
-    ctx.fillStyle = "#ffb6c1"; // Nền hồng lãng mạn
-    ctx.fillRect(0, 0, 800, 500);
-
+    ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
+    
     if (!met) {
-        // Hoạt ảnh đi bộ lại gần nhau (Tăng tốc độ lên 3)
-        boyX += 3; 
-        girlX -= 3;
-        // Kiểm tra va chạm (ôm nhau)
-        if (boyX >= girlX - 100) met = true;
+        boyX += 3; girlX -= 3; 
+        
+        // ========================================================
+        // --- ĐOẠN CODE SỬA: KÍCH HOẠT POP-UP KHI CHẠM NHAU ---
+        // ========================================================
+        if (boyX >= girlX - 100) {
+            met = true;
+            // Gọi hàm hiển thị Pop-up ngay khoảnh khắc chạm nhau
+            showPopup(); 
+        }
+        // ========================================================
     } else {
         // Khi đã gặp nhau, tạo trái tim bay tung tóe (Tăng tỉ lệ thả tim)
         if (Math.random() < 0.2) {
@@ -189,8 +252,7 @@ else if (scene === 3) {
         }
         ctx.fillStyle = "white"; ctx.fillText("I'M HERE NOW! 💖", 290, 180);
     }
-
-    // --- Vẽ Nhân Vật Nam Final (Bự: 150x150) ---
+// --- Vẽ Nhân Vật Nam Final (Bự: 150x150) ---
     // Kiểm tra xem ảnh boy_final.png đã load xong chưa
     let boyImg = new Image(); boyImg.src = "boy_final.png"; // Load ảnh final
     if (boyImg.complete && boyImg.naturalWidth !== 0) {
@@ -225,6 +287,14 @@ else if (scene === 3) {
     requestAnimationFrame(draw);
 }
 draw();
+function showPopup() {
+    document.getElementById('popup-overlay').style.display = 'flex';
+}
+
+// Hàm ẩn Pop-up
+function hidePopup() {
+    document.getElementById('popup-overlay').style.display = 'none';
+}
 </script>
 </body>
 </html>
