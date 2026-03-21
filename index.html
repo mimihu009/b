@@ -3,17 +3,10 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>Our Long Distance Journey 💖</title>
+    <title>Long Distance Flight ✈️</title>
     <style>
         body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Press Start 2P', cursive; }
-        canvas { 
-            background: #3d3d3d; 
-            border: 5px solid #ffb6c1; 
-            /* Giúp ảnh pixel không bị mờ khi phóng to */
-            image-rendering: pixelated; 
-            image-rendering: crisp-edges;
-            cursor: pointer;
-        }
+        canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -24,7 +17,7 @@
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 
-// ===== 1. TÀI NGUYÊN (Hãy đảm bảo tên file trên GitHub viết thường y hệt) =====
+// ===== 1. TÀI NGUYÊN =====
 let idleImg = new Image(); idleImg.src = "1.png";
 let hit1Img = new Image(); hit1Img.src = "2.png";
 let hit2Img = new Image(); hit2Img.src = "3.png";
@@ -38,12 +31,13 @@ let animTime = 0;
 let particles = [];
 let targetMoney = 10;
 
-// Màn 2: Bay
-let planeY = 200, planeV = 0, gravity = 0.4;
+// Màn 2: Bay (Né mây)
+let planeY = 250, planeV = 0, gravity = 0.4;
 let obstacles = [];
 let progress = 0;
+let gameOverM2 = false;
 
-// Màn 2.5: Mini game chọn bạn gái
+// Màn 2.5: Chọn bạn gái
 let girls = [];
 let correctGirlIndex = 0;
 let feedbackText = "";
@@ -57,56 +51,37 @@ function initMiniGame() {
     girls = [];
     correctGirlIndex = Math.floor(Math.random() * 4);
     for(let i=0; i<4; i++) {
-        girls.push({
-            x: 100 + i * 160,
-            y: 250,
-            isReal: (i === correctGirlIndex)
-        });
+        girls.push({ x: 100 + i * 160, y: 250, isReal: (i === correctGirlIndex) });
     }
 }
 
+function resetM2() {
+    planeY = 250; planeV = 0;
+    obstacles = []; progress = 0;
+    gameOverM2 = false;
+}
+
 // ===== 3. XỬ LÝ CLICK =====
-// ===== TRONG PHẦN XỬ LÝ CLICK (Sửa lại đoạn scene === 1) =====
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
     let mouseX = e.clientX - rect.left;
     let mouseY = e.clientY - rect.top;
 
     if (scene === 1) {
-        money++;
-        animTime = 12;
-        
-        // Chơi âm thanh đào
-        hitSound.currentTime = 0;
-        hitSound.play().catch(()=>{});
-
-        // Tạo mảnh văng
-        for(let i=0; i<6; i++) {
-            particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
-        }
-
-        // KHI ĐỦ TIỀN
-        if (money >= targetMoney) {
-            // DỪNG ÂM THANH NGAY LẬP TỨC
-            hitSound.pause(); 
-            hitSound.currentTime = 0; 
-            
-            setTimeout(() => { 
-                scene = 2; 
-            }, 500);
-        }
+        money++; animTime = 12;
+        hitSound.currentTime = 0; hitSound.play().catch(()=>{});
+        for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
+        if (money >= targetMoney) scene = 2;
+    }
+    else if (scene === 2) {
+        if (gameOverM2) { resetM2(); }
+        else { planeV = -8; }
     }
     else if (scene === 2.5) {
         girls.forEach((g) => {
             if (mouseX > g.x && mouseX < g.x + 80 && mouseY > g.y && mouseY < g.y + 120) {
-                if (g.isReal) {
-                    feedbackText = "ĐÚNG RỒI! YÊU THẾ 💖";
-                    feedbackTime = 60;
-                    setTimeout(() => { scene = 3; }, 1000);
-                } else {
-                    feedbackText = "SAI RỒI! HUHU 😭";
-                    feedbackTime = 60;
-                }
+                if (g.isReal) { feedbackText = "ĐÚNG RỒI! YÊU THẾ 💖"; feedbackTime = 60; setTimeout(() => { scene = 3; }, 1000); }
+                else { feedbackText = "SAI RỒI! HUHU 😭"; feedbackTime = 60; }
             }
         });
     }
@@ -115,89 +90,106 @@ canvas.addEventListener("mousedown", (e) => {
 // ===== 4. VÒNG LẶP VẼ =====
 function draw() {
     ctx.clearRect(0, 0, 800, 500);
-    ctx.font = "14px 'Press Start 2P'";
+    ctx.font = "12px 'Press Start 2P'";
 
-    // --- MÀN 1: ĐÀO TIỀN ---
     if (scene === 1) {
-        ctx.fillStyle = "gold";
-        ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
-        ctx.fillStyle = "white";
-        ctx.fillText("CLICK TO WORK FOR THE TICKET!", 180, 120);
-
+        ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
+        ctx.fillStyle = "white"; ctx.fillText("CLICK TO WORK FOR THE TICKET!", 180, 120);
         particles.forEach((p, i) => {
             ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 8, 8);
             p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.02;
             if(p.life <= 0) particles.splice(i, 1);
         });
         ctx.globalAlpha = 1;
-
         let img = (animTime > 8) ? hit1Img : (animTime > 0) ? hit2Img : idleImg;
-        if (img.complete && img.naturalWidth !== 0) {
-            // VẼ ẢNH BỰ (180x180)
-            ctx.drawImage(img, 310, 250, 180, 180);
-        } else {
-            ctx.fillStyle = (animTime > 0) ? "yellow" : "blue";
-            ctx.fillRect(350, 280, 100, 150);
-        }
+        if (img.complete) ctx.drawImage(img, 310, 250, 180, 180);
+        else { ctx.fillStyle = "blue"; ctx.fillRect(350, 280, 100, 150); }
         if (animTime > 0) animTime--;
     }
 
-    // --- MÀN 2: BAY ---
-    else if (scene === 2) {
-        ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500);
-        planeV += gravity; planeY += planeV;
-        if (planeY > 430) planeY = 430; if (planeY < 0) planeY = 0;
+    // --- TRÌNH VẼ GAME (HÀM DRAW) ---
 
-        if (planeImg.complete && planeImg.naturalWidth !== 0) {
-            ctx.drawImage(planeImg, 80, planeY, 120, 80); // MÁY BAY BỰ
-        } else {
-            ctx.fillStyle = "white"; ctx.fillRect(80, planeY, 100, 60);
-        }
-        
-        if (Math.random() < 0.03) obstacles.push({x: 800, y: Math.random()*400, w: 80, h: 40});
+// ... (các đoạn code khác giữ nguyên) ...
+
+else if (scene === 2) {
+    ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500); // Bầu trời xanh
+    
+    if (!gameOverM2) {
+        // ... (logic di chuyển và va chạm giữ nguyên) ...
+        planeV += gravity; planeY += planeV;
+        progress += 0.2; // Quãng đường bay
+
+        // Vẽ và quản lý mây cản (giữ nguyên)
+        if (Math.random() < 0.04) obstacles.push({x: 800, y: Math.random()*450, w: 90, h: 50});
         obstacles.forEach((o, i) => {
-            o.x -= 6; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillRect(o.x, o.y, o.w, o.h);
-            if (o.x < 180 && o.x > 80 && Math.abs(o.y - planeY) < 50) { progress -= 5; obstacles.splice(i, 1); }
-            if (o.x < -100) obstacles.splice(i, i);
+            o.x -= (6 + progress/10); 
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.fillRect(o.x, o.y, o.w, o.h);
+            // Va chạm (giữ nguyên)
+            if (o.x < 180 && o.x + o.w > 80 && o.y < planeY + 60 && o.y + o.h > planeY + 20) { gameOverM2 = true; }
+            if (o.x < -100) obstacles.splice(i, 1);
         });
-        progress += 0.4;
-        ctx.fillStyle = "white"; ctx.fillText("DISTANCE TO HER: " + Math.floor(progress) + "%", 250, 60);
+        if (planeY > 440 || planeY < -20) gameOverM2 = true;
         if (progress >= 100) { scene = 2.5; initMiniGame(); }
     }
 
-    // --- MÀN 2.5: CHỌN BẠN GÁI ---
+    // ========================================================
+    // --- ĐOẠN CODE SỬA: VẼ MÁY BAY BỰ (DÙNG ẢNH plane.png) ---
+    // ========================================================
+    ctx.save();
+    if (gameOverM2) ctx.globalAlpha = 0.5; // Làm mờ nếu bị đâm
+
+    // Kiểm tra xem ảnh plane.png đã load xong chưa và có bự không
+    if (planeImg.complete && planeImg.naturalWidth !== 0) {
+        // Vẽ ảnh máy bay tại vị trí (80, planeY) với kích thước bự (120x80)
+        ctx.drawImage(planeImg, 80, planeY, 120, 80); 
+    } else {
+        // Nếu không tìm thấy ảnh plane.png, vẽ ô vuông trắng dự phòng
+        ctx.fillStyle = "white";
+        ctx.fillRect(80, planeY, 100, 60); 
+        ctx.fillStyle = "black"; ctx.font="10px Arial"; ctx.fillText("✈️", 110, planeY+35);
+    }
+    ctx.restore();
+    // ========================================================
+
+
+    // Hiển thị thông tin hành trình (giữ nguyên)
+    ctx.fillStyle = "white"; ctx.font = "12px 'Press Start 2P'";
+    ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
+    if (gameOverM2) {
+        ctx.fillStyle = "red"; ctx.fillText("CRASHED! HUHU 😭", 280, 200);
+        ctx.fillText("CLICK TO FLY AGAIN", 270, 250);
+    } else {
+        ctx.fillText("AVOID THE CLOUDS! ☁️", 270, 480);
+    }
+}
+
+// ... (các đoạn code màn 2.5, 3 giữ nguyên) ...
+
     else if (scene === 2.5) {
         ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500);
-        ctx.fillStyle = "white";
-        ctx.fillText("WHO IS YOUR GIRL?", 260, 150);
-        
+        ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR GIRL? 😏", 260, 150);
         if (feedbackTime > 0) {
             ctx.fillStyle = feedbackText.includes("HUHU") ? "#ff4d4d" : "#00ff00";
             ctx.fillText(feedbackText, 280, 200);
             feedbackTime--;
         }
-
         girls.forEach((g) => {
             ctx.fillStyle = g.isReal ? "#ff69b4" : "#555";
-            ctx.fillRect(g.x, g.y, 80, 120); // NHÂN VẬT NỮ BỰ
-            ctx.fillStyle = "white"; ctx.fillText("?", g.x + 30, g.y + 60);
+            ctx.fillRect(g.x, g.y, 80, 120);
+            ctx.fillStyle = "white"; ctx.fillText("?", g.x + 35, g.y + 65);
         });
     }
 
-    // --- MÀN 3: GẶP NHAU ---
     else if (scene === 3) {
         ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
-        if (!met) {
-            boyX += 3; girlX -= 3;
-            if (boyX >= girlX - 100) met = true;
-        } else {
+        if (!met) { boyX += 3; girlX -= 3; if (boyX >= girlX - 100) met = true; }
+        else {
             if (Math.random() < 0.2) hearts.push({x: boyX+60, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
-            ctx.fillStyle = "white"; ctx.fillText("I MISS YOU SO MUCH! 💖", 240, 180);
+            ctx.fillStyle = "white"; ctx.fillText("HẠ CÁNH NƠI EM! 💖", 270, 180);
         }
-        
-        if (idleImg.complete) ctx.drawImage(idleImg, boyX, 260, 140, 140); // BOY BỰ
-        ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 280, 100, 140); // GIRL BỰ
-
+        if (idleImg.complete) ctx.drawImage(idleImg, boyX, 260, 140, 140);
+        ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 280, 100, 140);
         hearts.forEach((h, i) => {
             ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
             h.x += h.sx; h.y += h.sy; h.life -= 0.02;
@@ -205,7 +197,6 @@ function draw() {
         });
         ctx.globalAlpha = 1;
     }
-
     requestAnimationFrame(draw);
 }
 draw();
