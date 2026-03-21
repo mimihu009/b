@@ -66,6 +66,7 @@ function initMiniGame() {
 }
 
 // ===== 3. XỬ LÝ CLICK =====
+// ===== TRONG PHẦN XỬ LÝ CLICK (Sửa lại đoạn scene === 1) =====
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
     let mouseX = e.clientX - rect.left;
@@ -74,16 +75,26 @@ canvas.addEventListener("mousedown", (e) => {
     if (scene === 1) {
         money++;
         animTime = 12;
+        
+        // Chơi âm thanh đào
         hitSound.currentTime = 0;
         hitSound.play().catch(()=>{});
-        // Hiệu ứng kim cương văng bự hơn
+
+        // Tạo mảnh văng
         for(let i=0; i<6; i++) {
             particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
         }
-        if (money >= targetMoney) setTimeout(() => { scene = 2; }, 500);
-    }
-    else if (scene === 2) {
-        planeV = -8;
+
+        // KHI ĐỦ TIỀN
+        if (money >= targetMoney) {
+            // DỪNG ÂM THANH NGAY LẬP TỨC
+            hitSound.pause(); 
+            hitSound.currentTime = 0; 
+            
+            setTimeout(() => { 
+                scene = 2; 
+            }, 500);
+        }
     }
     else if (scene === 2.5) {
         girls.forEach((g) => {
