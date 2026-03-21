@@ -3,7 +3,7 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>Long Distance Journey ✈️💖</title>
+    <title>LOVE✈️💖</title>
     <style>
         body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Press Start 2P', cursive; }
         canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; position: relative; z-index: 1; }
@@ -133,7 +133,7 @@ function draw() {
         if (planeImg.complete && planeImg.naturalWidth !== 0) ctx.drawImage(planeImg, 80, planeY, 120, 80);
         // --- CHỐNG LỖI MÁY BAY ---
         else { ctx.fillStyle = "white"; ctx.fillRect(80, planeY, 80, 50); }
-        ctx.fillStyle = "white"; ctx.fillText("GO TO HER: " + Math.floor(progress) + "%", 30, 50);
+        ctx.fillStyle = "white"; ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
         if (gameOverM2) ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
     } 
     else if (scene === 2.5) {
