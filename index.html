@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<title>For you 💖</title>
+<style>
+canvas {
+    background: #fff0f5;
+    display: block;
+    margin: auto;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game" width="500" height="300"></canvas>
+
+<script>
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
+
+// ===== SCENE =====
+let scene = 1;
+let choiceScene = false;
+let idle = new Image();
+idle.src = "idle.png";
+
+let hit1 = new Image();
+hit1.src = "hit1.png";
+
+let hit2 = new Image();
+hit2.src = "hit2.png";
+
+// ===== MÀN 1 =====
+let money = 0;
+let coins = [];
+
+// ===== MÀN 2 =====
+let playerY = 150;
+let obstacle = {
+    x: 500,
+    y: 150,
+    size: 30,
+    speedX: 5,
+    speedY: 2
+};
+let startTime = Date.now();
+let velocity = 0;
+let gravity = 0.5;
+
+// ===== MINI GAME =====
+let characters = [];
+let correctIndex = Math.floor(Math.random() * 4);
+let result = "";
+
+// ===== MÀN 3 =====
+let playerX = 50;
+let met = false;
+let hugging = false;
+let hearts = [];
+
+// ===== TẠO NHÂN VẬT MINI GAME =====
+function createCharacters() {
+    characters = [];
+    for (let i = 0; i < 4; i++) {
+        characters.push({
+            x: 60 + i * 100,
+            y: 150,
+            size: 40
+        });
+    }
+}
+
+// ===== CLICK =====
+canvas.addEventListener("click", (e) => {
+    if (scene === 1) {
+    money++;
+
+    // tạo đồng tiền tại vị trí click
+    let rect = canvas.getBoundingClientRect();
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
+
+    coins.push({
+        x: x,
+        y: y,
+        size: 15,
+        speed: 1 + Math.random() * 2,
+        alpha: 1
+    });
+}
+    if (scene !== 3) return;
+
+    let rect = canvas.getBoundingClientRect();
+    let mouseX = e.clientX - rect.left;
+    let mouseY = e.clientY - rect.top;
+
+    characters.forEach((c, i) => {
+        if (
+            mouseX > c.x &&
+            mouseX < c.x + c.size &&
+            mouseY > c.y &&
+            mouseY < c.y + c.size
+        ) {
+            if (i === correctIndex) {
+                result = "congrats 💖";
+                setTimeout(() => {
+                    scene = 4;
+                }, 1000);
+            } else {
+                result = "you're failed 😭";
+            }
+        }
+    });
+});
+
+// ===== KEY =====
+document.addEventListener("keydown", (e) => {
+   if (scene === 2 && e.key === "ArrowUp") {
+    velocity = -6;
+}
+});
+
+// ===== GAME LOOP =====
+function draw() {
+    ctx.clearRect(0,0,500,300);
+ctx.font = "12px 'Press Start 2P'";
+ctx.fillStyle = "black";
+
+    // ===== MÀN 1 =====
+    if (scene === 1) {
+  
+coins.forEach((c, i) => {
+    ctx.globalAlpha = c.alpha;
+    ctx.fillStyle = "gold";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // bay lên
+    c.y -= c.speed;
+
+    // mờ dần
+    c.alpha -= 0.02;
+
+    // xoá khi biến mất
+    if (c.alpha <= 0) {
+        coins.splice(i, 1);
+    }
+});
+
+ctx.globalAlpha = 1;
+        ctx.fillText("Working: " + money, 20, 30);
+        ctx.fillText("Click to work 💼", 140, 150);
+
+        if (money >= 10) {
+            scene = 2;
+            startTime = Date.now();
+        }
+    }
+
+    // ===== MÀN 2 =====
+    else if (scene === 2) {
+velocity += gravity;
+playerY += velocity;
+if (playerY < 0) playerY = 0;
+if (playerY > 270) playerY = 270;
+        ctx.fillText("You've got a flight ticket! ✈️", 20, 30);
+
+        // player
+        ctx.fillRect(50, playerY, 30, 30);
+
+        // obstacle
+        // di chuyển
+obstacle.x -= obstacle.speedX;
+obstacle.y += obstacle.speedY;
+
+// đổi hướng lên xuống
+if (obstacle.y <= 0 || obstacle.y >= 270) {
+    obstacle.speedY *= -1;
+}
+
+// reset khi ra ngoài
+if (obstacle.x < 0) {
+    obstacle.x = 500;
+    obstacle.y = Math.random() * 250;
+}
+
+// vẽ
+ctx.fillRect(obstacle.x, obstacle.y, obstacle.size, obstacle.size);
+        // qua mini game sau 10s
+       if (Date.now() - startTime > 10000) {
+    scene = 3;
+    createCharacters();
+}
+    }
+
+    // ===== MINI GAME =====
+    else if (scene === 3) {
+    ctx.fillText("Choose the right one 😏", 120, 80);
+
+    characters.forEach((c, i) => {
+        ctx.fillStyle = (i === correctIndex) ? "pink" : "gray";
+        ctx.fillRect(c.x, c.y, c.size, c.size);
+    });
+
+    ctx.fillStyle = "black";
+    ctx.fillText(result, 150, 50);
+
+    if (result.includes("wrong")) {
+        ctx.fillText("you're failed 😭", 160, 120);
+    }
+}
+    
+
+    // ===== MÀN 3 =====
+    else if (scene === 4) {
+        ctx.fillText("going to see your GF 💖", 20, 30);
+
+        if (!met) {
+            playerX += 1;
+            if (playerX > 340) met = true;
+        } else {
+            hugging = true;
+        }
+
+        // player
+        ctx.fillStyle = "blue";
+        ctx.fillRect(playerX, 200, 30, 30);
+
+        // lover
+        ctx.fillStyle = "pink";
+        ctx.fillRect(400, 200, 30, 30);
+
+        // ôm nhau
+        if (hugging) {
+            if (playerX < 370) playerX += 0.5;
+        }
+
+        // 💖 tạo trái tim
+        if (hugging && Math.random() < 0.1) {
+            hearts.push({
+                x: 380,
+                y: 200,
+                size: 10,
+                speed: Math.random() * 2 + 1
+            });
+        }
+
+        // 💖 vẽ trái tim
+        hearts.forEach((h, i) => {
+            ctx.fillStyle = "red";
+            ctx.fillRect(h.x, h.y, h.size, h.size);
+            h.y -= h.speed;
+
+            if (h.y < 0) hearts.splice(i, 1);
+        });
+
+        // 💌 lời chúc
+        if (hugging) {
+            ctx.fillStyle = "black";
+            ctx.font = "12px 'Press Start 2P'";
+            ctx.fillText("Happy birthday cutie pie!! 💖", 100, 100);
+            ctx.fillText("We finally meet...", 80, 130);
+        }
+    }
+
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
