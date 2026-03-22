@@ -81,7 +81,12 @@ let boyX = 50, girlX = 650, met = false, hasShowedPopup = false, flagAnimTime = 
 let keys = {}, isTransition = false, transitionText = "", transitionTimer = 0, nextScene = 1, typingIdx = 0;
     let planeSpeedBase = 1; // Hệ số tốc độ ban đầu
     let flagScale = 1.8; // Hệ số tỷ lệ cờ (Ví dụ: 1.8 = to gấp 1.8 lần)
-
+let fireworks = []; // Mảng chứa các hạt pháo hoa
+let isCelebrating = false; // Biến kiểm tra đang nổ pháo hoa
+let celebrationTimer = 0; // Bộ đếm thời gian chờ 5 giây
+const fireworkSound = new Audio("firework.mp3"); // Con tìm 1 file âm thanh pháo hoa nổ nhé
+fireworkSound.loop = false;
+    
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
@@ -294,11 +299,37 @@ function draw() {
                     ctx.drawImage(cFlag, flagX, flagY, flagW, flagH);
 
                     // Check va chạm với cờ: Cần điều chỉnh phạm vi va chạm cho cờ to
-                    if (flagX <= planeX + 130 && planeY + 80 >= flagY) { 
-                        planeSpeedBase = 1; // Reset tốc độ cho lần chơi sau
-                        startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
-                        initMiniGame(); 
-                    }
+                 // --- XỬ LÝ CHẠM CỜ: NỔ PHÁO HOA TƯNG BỪNG ---
+            if (flagX <= planeX + 130 && planeY + 80 >= flagY && !isCelebrating) { 
+                // 1. Kích hoạt chế độ ăn mừng
+                isCelebrating = true;
+                celebrationTimer = 300; // 300 khung hình = 5 giây (60fps * 5)
+                planeSpeedBase = 1; // Reset tốc độ
+
+                                        
+                // 2. Tạo pháo hoa nổ ngay tại vị trí cờ
+                let fxCenter = flagX + flagW/2;
+                let fyCenter = flagY + flagH/2;
+                for (let i = 0; i < 100; i++) { // Tạo 100 hạt pháo hoa
+                    let angle = Math.random() * Math.PI * 2; // Góc bay ngẫu nhiên
+                    let speed = 5 + Math.random() * 8; // Tốc độ bay ngẫu nhiên
+                    fireworks.push({
+                        x: fxCenter,
+                        y: fyCenter,
+                        sx: Math.cos(angle) * speed, // Tốc độ X
+                        sy: Math.sin(angle) * speed, // Tốc độ Y
+                        life: 1, // Tuổi thọ hạt (1 = mới, 0 = biến mất)
+                        color: `hsl(${Math.random() * 360}, 100%, 50%)` // Màu ngẫu nhiên
+                    });
+                }
+
+                // 3. Phát âm thanh pháo hoa
+                fireworkSound.currentTime = 0;
+                fireworkSound.play().catch(()=>{});
+
+                // 4. Khởi tạo MiniGame nhưng CHƯA CHUYỂN MÀN
+                initMiniGame();
+            }
                 }
             }
         // Vẽ Máy bay & Chữ Crashed
@@ -310,6 +341,46 @@ function draw() {
         }
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
     }
+            // --- VẼ VÀ CẬP NHẬT PHÁO HOA ---
+        if (isCelebrating) {
+            // Chặn máy bay di chuyển
+            planeY = planeY; 
+
+            // Cập nhật và vẽ từng hạt pháo hoa
+            fireworks.forEach((p, i) => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); // Vẽ hạt tròn nhỏ
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life; // Độ mờ theo tuổi thọ
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                p.x += p.sx; // Di chuyển X
+                p.y += p.sy; // Di chuyển Y
+                p.sy += 0.2; // Trọng lực nhẹ, pháo hoa rơi xuống
+                p.life -= 0.015; // Tuổi thọ giảm dần
+
+                if (p.life <= 0) fireworks.splice(i, 1); // Xóa hạt khi hết đời
+            });
+
+            // Hiển thị dòng chữ chúc mừng
+            ctx.fillStyle = "white";
+            ctx.font = "20px 'Press Start 2P'";
+            ctx.textAlign = "center";
+            ctx.fillText("DESTINATION REACHED! 🎇", 400, 220);
+            ctx.font = "12px 'Press Start 2P'";
+            ctx.fillText("PREPARING TO LAND... " + Math.ceil(celebrationTimer/60) + "S", 400, 260);
+            ctx.textAlign = "left";
+
+            // Đếm ngược 5 giây
+            celebrationTimer--;
+            if (celebrationTimer <= 0) {
+                isCelebrating = false; // Reset chế độ ăn mừng
+                fireworks = []; // Xóa hết pháo hoa cũ
+                // CHÍNH THỨC CHUYỂN MÀN
+                startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
+            }
+        }
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
         if (feedbackTime > 0) { ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.fillText(feedbackText, 310, 130); feedbackTime--; }
