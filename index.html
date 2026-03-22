@@ -124,23 +124,66 @@ function draw() {
     } 
     else if (scene === 2) {
         ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500);
+        
         if (!gameOverM2) {
-            planeV += gravity; planeY += planeV; progress += 0.3; // Quãng đường bay
-            if (Math.random() < 0.03) obstacles.push({x: 800, y: Math.random()*400, w: 80, h: 40});
+            planeV += gravity; 
+            planeY += planeV; 
+            progress += 0.2; // Tốc độ bay
+
+            // Chỉ tạo mây khi chưa tới đích
+            if (progress < 100 && Math.random() < 0.04) {
+                obstacles.push({x: 800, y: Math.random() * 400, w: 90, h: 50});
+            }
+
             obstacles.forEach((o, i) => {
-                o.x -= 5; ctx.fillStyle = "white"; ctx.fillRect(o.x, o.y, o.w, o.h);
-                if (o.x < 180 && o.x+o.w > 80 && o.y < planeY+60 && o.y+o.h > planeY+20) gameOverM2 = true;
+                o.x -= (6 + progress / 10); // Mây bay nhanh dần
+                ctx.fillStyle = "rgba(255,255,255,0.8)";
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+
+                // --- SỬA LỖI VA CHẠM TẠI ĐÂY ---
+                // Chỉ kiểm tra va chạm sau khi máy bay đã ổn định (progress > 1)
+                if (progress > 1) {
+                    let hitX = (80 < o.x + o.w && 80 + 100 > o.x);
+                    let hitY = (planeY + 20 < o.y + o.h && planeY + 60 > o.y);
+                    
+                    if (hitX && hitY) {
+                        gameOverM2 = true;
+                    }
+                }
+
                 if (o.x < -100) obstacles.splice(i, 1);
             });
-            if (planeY > 450 || planeY < -50) gameOverM2 = true;
-            if (progress >= 100) { scene = 2.5; initMiniGame(); }
+
+            // Rớt khỏi màn hình hoặc bay quá cao
+            if (planeY > 460 || planeY < -50) gameOverM2 = true;
+
+            // Về đích
+            if (progress >= 100) { 
+                scene = 2.5; 
+                initMiniGame(); 
+            }
         }
-        if (planeImg.complete && planeImg.naturalWidth !== 0) ctx.drawImage(planeImg, 80, planeY, 120, 80);
-        // --- CHỐNG LỖI MÁY BAY ---
-        else { ctx.fillStyle = "white"; ctx.fillRect(80, planeY, 80, 50); }
-        ctx.fillStyle = "white"; ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
-        if (gameOverM2) ctx.fillStyle = "red"; ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
-    } 
+
+        // Vẽ máy bay
+        ctx.save();
+        if (gameOverM2) ctx.globalAlpha = 0.5;
+        if (planeImg.complete) ctx.drawImage(planeImg, 80, planeY, 120, 80);
+        else { ctx.fillStyle = "white"; ctx.fillRect(80, planeY, 100, 60); }
+        ctx.restore();
+
+        ctx.fillStyle = "white"; 
+        ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
+
+        // CHỈ HIỆN CHỮ CRASH KHI GAME OVER THẬT SỰ
+        if (gameOverM2) {
+            ctx.fillStyle = "red";
+            ctx.fillText("CRASHED! HICC 😭", 280, 200);
+            ctx.fillText("CLICK TO FLY AGAIN", 270, 250);
+        } else {
+            ctx.fillStyle = "white";
+            ctx.fillText("AVOID THE CLOUDS! ☁️", 270, 480);
+        }
+    }
     else if (scene === 2.5) {
         ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500);
         ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR REAL GIRL? 😏", 250, 100);
