@@ -31,6 +31,9 @@
     </div>
 
 <script>
+// ========================================================
+// --- 1. KHAI BÁO BIẾN & TÀI NGUYÊN (LOAD HÌNH) ---
+// ========================================================
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 
@@ -40,7 +43,7 @@ const typeSound = new Audio("typing.mp3");
 const hitSound = new Audio("hit.mp3");
 const fireworkSound = new Audio("firework.mp3");
 
-// --- QUẢN LÝ HÌNH ẢNH (Má gom vào object 'img' cho con dễ gọi) ---
+// Cấu trúc quản lý hình ảnh thống nhất
 const img = {};
 function load(name, src) { img[name] = new Image(); img[name].src = src; }
 
@@ -54,7 +57,7 @@ load('boyFinal', 'boy_final.png'); load('girlFinal', 'girl_final.png');
 let cloudSprites = [new Image(), new Image(), new Image()];
 cloudSprites[0].src = "cloud1.png"; cloudSprites[1].src = "cloud2.png"; cloudSprites[2].src = "cloud3.png";
 
-// Biến logic
+// Biến logic game
 let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
 let lastCloudTime = 0, planeY = 300, planeX = 80, obstacles = [], progress = 0, gameOverM2 = false;
 let girls = [], feedbackText = "", feedbackTime = 0;
@@ -62,13 +65,28 @@ let boyX = 50, girlX = 650, met = false, flagAnimTime = 0;
 let keys = {}, isTransition = false, transitionText = "", transitionTimer = 0, nextScene = 1, typingIdx = 0;
 let planeSpeedBase = 1, flagScale = 1.8, fireworks = [], isCelebrating = false, celebrationTimer = 0;
 
+// --- THÊM BIẾN EFFECT TÌNH YÊU ---
+let finalHearts = []; // Mảng chứa các hạt trái TIM ở màn cuối
+let finalHeartSpawnTimer = 0; // Bộ đếm thời gian tạo trái TIM liên tục
+
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
+// ========================================================
+// --- 2. HÀM HỖ TRỢ CHUYỂN CẢNH CÓ DỪNG SOUND ---
+// ========================================================
 function startTransition(text, targetScene, duration = 120) {
-    typeSound.src = "typing.mp3"; typeSound.load(); typeSound.volume = 1.0;
-    isTransition = true; transitionText = text; nextScene = targetScene;
-    transitionTimer = duration; typingIdx = 0; 
+    // 1. Cưỡng ép dừng Sound: Giảm âm lượng về 0 + Nạp lại file để reset
+    typeSound.src = "typing.mp3"; 
+    typeSound.load(); 
+    typeSound.volume = 1.0;
+
+    // 2. Thiết lập chuyển cảnh
+    isTransition = true;
+    transitionText = text;
+    nextScene = targetScene;
+    transitionTimer = duration;
+    typingIdx = 0; 
 }
 
 function initMiniGame() {
@@ -87,56 +105,83 @@ function resetM2() {
     planeSpeedBase = 1; isCelebrating = false; fireworks = []; lastCloudTime = 0;
 }
 
+// ========================================================
+// --- 3. SỰ KIỆN CLICK CHUỘT ---
+// ========================================================
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
     let mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    if (isTransition) return;
+    if (isTransition) return; // Chặn click khi đang chuyển cảnh
 
     if (scene === 1) {
         money++; animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
         if (money >= targetMoney) startTransition("GOT ENOUGH! LET'S GO ✈️", 2, 120);
-    } 
+    } 
     else if (scene === 2 && gameOverM2) { resetM2(); }
     else if (scene === 2.5) {
         girls.forEach(g => {
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
-                if (g.isReal) { 
+                if (g.isReal) { 
                     feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60;
-                    setTimeout(() => { startTransition("FINALLY... THIS MOMENT...", 3, 300); }, 1000);
+                    setTimeout(() => { startTransition(<p>"FINALLY... THIS MOMENT..."<br>" I HAVE BEEN WAITING FOR SO LONG", 3, 300); }, 1000);
                 } else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
         });
     }
 });
 
+// ========================================================
+// --- 4. VÒNG LẶP CHÍNH (MAIN DRAW LOOP) ---
+// ========================================================
 function draw() {
+    // --- XỬ LÝ CHUYỂN CẢNH (TYPING CHỮ CÓ CƯỠNG ÉP DỪNG SOUND) ---
     if (isTransition) {
         ctx.fillStyle = "black"; ctx.fillRect(0, 0, 800, 500);
         let currentDisplay = transitionText.substring(0, Math.floor(typingIdx));
-        if (typingIdx < transitionText.length) {
-            typingIdx += 0.2; 
-            if (Math.floor(typingIdx) > Math.floor(typingIdx - 0.2)) {
-                typeSound.volume = 1.0; typeSound.currentTime = 0; typeSound.play().catch(()=>{});
-            }
-        } else { typeSound.volume = 0; typeSound.pause(); }
         
+        // 1. CHỈ PHÁT SOUND KHI ĐANG GÕ CHỮ
+        if (typingIdx < transitionText.length) {
+            typingIdx += 0.2; 
+            if (Math.floor(typingIdx) > Math.floor(typingIdx - 0.2)) {
+                typeSound.volume = 1.0; // Đảm bảo có tiếng khi gõ
+                typeSound.currentTime = 0;
+                typeSound.play().catch(()=>{});
+            }
+        } else {
+            // 2. KHI CHỮ ĐÃ HIỆN XONG: ÉP ÂM LƯỢNG VỀ 0 NGAY
+            typeSound.volume = 0;
+            typeSound.pause();
+        }
+
+        // 3. KHI SẮP HẾT 2S HOẶC 10S: KHÔNG CHO PHÁP KÊU NỮA
+        if (transitionTimer < 20) {
+            typeSound.volume = 0;
+            typeSound.pause();
+            typeSound.currentTime = 0;
+        }
+
         ctx.fillStyle = "white"; ctx.font = "14px 'Press Start 2P'"; ctx.textAlign = "center";
-        ctx.fillText(currentDisplay, 400, 250); ctx.textAlign = "left"; 
+        ctx.fillText(currentDisplay, 400, 250); ctx.textAlign = "left"; 
         transitionTimer--;
         if (transitionTimer <= 0) {
             isTransition = false; scene = nextScene;
+            // Cú chốt: Xóa sổ hoàn toàn sound typing
+            typeSound.pause(); typeSound.src = "";
+            // Nếu là màn 3 thì mới bật nhạc lãng mạn
             if (scene === 3) romanticMusic.play().catch(()=>{});
         }
-        requestAnimationFrame(draw); return; 
+        requestAnimationFrame(draw); return; 
     }
 
     ctx.clearRect(0, 0, 800, 500);
+    ctx.font = "12px 'Press Start 2P'";
 
+    // --- MÀN 1: ĐẬP TIỀN ---
     if (scene === 1) {
         if (img.bg1.complete) ctx.drawImage(img.bg1, 0, 0, 800, 500);
-        ctx.fillStyle = "gold"; ctx.font = "12px 'Press Start 2P'"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
+        ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
         particles.forEach((p, i) => {
             ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 8, 8);
             p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.02;
@@ -147,10 +192,10 @@ function draw() {
         if (pImg.complete) ctx.drawImage(pImg, 220, 140, 360, 360);
         if (animTime > 0) animTime--;
     }
+    // --- MÀN 2: BAY VỀ VỚI EM ---
     else if (scene === 2) {
         if (img.bg2.complete) ctx.drawImage(img.bg2, 0, 0, 800, 500);
         
-        // Cờ
         let fW = 150 * flagScale, fH = 100 * flagScale, fY = 500 - fH;
         let fX = 800 - (progress - 95) * 150 * planeSpeedBase;
         let cFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? img.flag1 : img.flag2;
@@ -188,7 +233,6 @@ function draw() {
                 }
             }
         }
-
         if (isCelebrating) {
             if (cFlag.complete) ctx.drawImage(cFlag, fX, fY, fW, fH);
             fireworks.forEach((p, i) => {
@@ -204,14 +248,15 @@ function draw() {
             celebrationTimer--;
             if (celebrationTimer <= 0) { isCelebrating = false; startTransition("OH NO, SO CROWDED!!", 2.5, 120); }
         }
-
         if (gameOverM2) { ctx.fillStyle = "red"; ctx.font = "20px 'Press Start 2P'"; ctx.fillText("CRASHED!", 320, 220); }
         if (img.plane.complete) ctx.drawImage(img.plane, planeX, planeY, 180, 120);
     }
+    // --- MÀN 2.5: ĐÔNG QUÁ
     else if (scene === 2.5) {
         if (img.bg25.complete) ctx.drawImage(img.bg25, 0, 0, 800, 500);
         ctx.fillStyle = "white"; ctx.font = "18px 'Press Start 2P'"; ctx.textAlign = "center";
-        ctx.fillText("PICK YOUR REAL GIRL! 💖", 400, 80);
+        // CHỮ CON CẦN ĐÂY
+        ctx.fillText("WHERE IS YOUR GF??🤔", 400, 80);
         ctx.textAlign = "left";
         if (feedbackTime > 0) { 
             ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.textAlign = "center";
@@ -225,17 +270,77 @@ function draw() {
             }
         });
     }
+    // ========================================================
+    // --- MÀN 3: HẠNH PHÚC BÊN NHAU (POP UP CUỐI CÓ HEART EFFECT) ---
+    // ========================================================
     else if (scene === 3) {
         if (img.bg3.complete) ctx.drawImage(img.bg3, 0, 0, 800, 500);
+        
         if (!met) {
-            boyX += 2; girlX -= 2;
+            // Hạ tốc độ chạm một chút cho effect đẹp: dùng 2.0 thay vì 2.5
+            boyX += 2.0; girlX -= 2.0;
+            
+            // Vẽ moving characters
+            if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 175, 225, 225);
+            if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 175, 225, 225);
+
             if (boyX >= girlX - 180) { met = true; document.getElementById('popup-overlay').style.display = 'flex'; }
+        } else {
+            // Hai nhân vật đã gặp nhau và đứng yên
+            if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 175, 225, 225);
+            if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 175, 225, 225);
+
+            // ========================================================
+            // --- CỤM CODE EFFECT TÌNH YÊU: MƯA TRÁI TIM LOOPING ---
+            // ========================================================
+            
+            // 1. Tạo trái TIM mới liên tục
+            finalHeartSpawnTimer++;
+            if (finalHeartSpawnTimer % 8 === 0) { // Tạo cứ mỗi 8 khung hình (~7.5 hạt/giây)
+                 finalHearts.push({
+                    x: boyX + 112 + (Math.random() - 0.5) * 300, // Spawn xung quanh vị trí 2 đứa chạm nhau
+                    y: 350 + (Math.random() - 0.5) * 100, // Spawn dọc theo cơ thể
+                    size: 15 + Math.random() * 20, // Kích thước hạt
+                    speedY: -1.5 - Math.random() * 2.5, // Bay lên
+                    speedX: (Math.random() - 0.5) * 1.5, // Lắc ngang
+                    // Màu sắc Custom: Random tông đỏ/hồng hsl(340-380)
+                    color: `hsl(${340 + Math.random() * 40}, 100%, ${60 + Math.random() * 20}%)`,
+                    opacity: 1, // Độ mờ ban đầu
+                    fadeRate: 0.005 + Math.random() * 0.01 // Tuổi thọ hạt (1-3 giây)
+                });
+            }
+
+            // 2. Cập nhật và vẽ trái tim
+            ctx.save(); // Lưu context state
+            // Font chữ đẹp để vẽ trái tim ❤️
+            ctx.font = "30px 'Arial'"; 
+            
+            // Dùng vòng lặp ngược để xóa hạt không bị lỗi
+            for (let i = finalHearts.length - 1; i >= 0; i--) {
+                let h = finalHearts[i];
+                h.y += h.speedY; // Di chuyển lên
+                h.x += h.speedX; // Lắc
+                h.opacity -= h.fadeRate; // Mờ dần
+
+                if (h.opacity > 0) {
+                    ctx.globalAlpha = h.opacity;
+                    ctx.fillStyle = h.color;
+                    // Vẽ emoji trái tim
+                    ctx.fillText('❤️', h.x - h.size / 2, h.y);
+                } else {
+                    finalHearts.splice(i, 1); // Xóa hạt đã chết
+                }
+            }
+            ctx.restore(); // Khôi phục state (tránh dính dính globalAlpha hay font)
+            // --- HẾT EFFECT TÌNH YÊU ---
         }
-        if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 175, 225, 225);
-        if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 175, 225, 225);
     }
+    
+    // Lệnh này quan trọng để game chạy liên tục nè:
     requestAnimationFrame(draw);
 }
+
+// Bắt đầu chạy game
 draw();
 </script>
 </body>
