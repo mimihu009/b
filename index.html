@@ -98,7 +98,7 @@ canvas.addEventListener("mousedown", (e) => {
     if (scene === 0) { scene = 1; return; }
 
     if (scene === 1) {
-        money += 5; // MỖI CLICK ĐƯỢC 5$ 💵
+        money += 40; // MỖI CLICK ĐƯỢC 40$ 💵
         animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
