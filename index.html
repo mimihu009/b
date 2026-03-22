@@ -98,7 +98,7 @@ canvas.addEventListener("mousedown", (e) => {
     if (scene === 0) { scene = 1; return; }
 
     if (scene === 1) {
-        money += 5; // MỖI CLICK ĐƯỢC 5$ 💵
+        money += 40; // MỖI CLICK ĐƯỢC 5$ 💵
         animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
@@ -234,31 +234,55 @@ function draw() {
             }
         });
     }
+    // --- MÀN 3: KẾT THÚC VIÊN MÃN ---
     else if (scene === 3) {
         if (img.bg3.complete) ctx.drawImage(img.bg3, 0, 0, 800, 500);
+        
         if (!met) {
             boyX += 2.0; girlX -= 2.0;
             if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 175, 225, 225);
             if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 175, 225, 225);
-            if (boyX >= girlX - 180) { met = true; document.getElementById('popup-overlay').style.display = 'flex'; }
+
+            if (boyX >= girlX - 180) { 
+                met = true; 
+                document.getElementById('popup-overlay').style.display = 'flex'; 
+            }
         } else {
+            // Khi đã chạm nhau: Vẽ nhân vật đứng yên
             if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 175, 225, 225);
             if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 175, 225, 225);
+
+            // --- ĐOẠN CODE TẠO HIỆU ỨNG TRÁI TIM (PHẢI CÓ ĐOẠN NÀY) ---
             finalHeartSpawnTimer++;
-            if (finalHeartSpawnTimer % 8 === 0) {
-                 finalHearts.push({
-                    x: boyX + 112 + (Math.random() - 0.5) * 300, y: 350 + (Math.random() - 0.5) * 100,
-                    size: 15 + Math.random() * 20, speedY: -1.5 - Math.random() * 2.5, speedX: (Math.random() - 0.5) * 1.5,
-                    color: `hsl(${340 + Math.random() * 40}, 100%, ${60 + Math.random() * 20}%)`, opacity: 1, fadeRate: 0.005 + Math.random() * 0.01
+            if (finalHeartSpawnTimer % 5 === 0) { // Cứ 5 khung hình tạo 1 tim (tăng tốc độ rơi)
+                finalHearts.push({
+                    x: 400 + (Math.random() - 0.5) * 400, // Phát ra ngẫu nhiên theo chiều ngang
+                    y: 550, // Bắt đầu từ dưới đáy màn hình bay lên
+                    size: 20 + Math.random() * 30,
+                    speedY: -2 - Math.random() * 3,
+                    speedX: (Math.random() - 0.5) * 2,
+                    opacity: 1,
+                    emoji: Math.random() > 0.5 ? '❤️' : '💖' // Đổi kiểu tim cho đa dạng
                 });
             }
-            ctx.save(); ctx.font = "30px 'Arial'"; 
+
+            ctx.save();
             for (let i = finalHearts.length - 1; i >= 0; i--) {
-                let h = finalHearts[i]; h.y += h.speedY; h.x += h.speedX; h.opacity -= h.fadeRate;
-                if (h.opacity > 0) { ctx.globalAlpha = h.opacity; ctx.fillStyle = h.color; ctx.fillText('❤️', h.x - h.size / 2, h.y); }
-                else { finalHearts.splice(i, 1); }
+                let h = finalHearts[i];
+                h.y += h.speedY;
+                h.x += h.speedX;
+                h.opacity -= 0.005; // Mờ dần chậm thôi cho lãng mạn
+
+                if (h.opacity > 0) {
+                    ctx.globalAlpha = h.opacity;
+                    ctx.font = h.size + "px Arial";
+                    ctx.fillText(h.emoji, h.x, h.y);
+                } else {
+                    finalHearts.splice(i, 1);
+                }
             }
             ctx.restore();
+            // --- HẾT HIỆU ỨNG TRÁI TIM ---
         }
     }
     requestAnimationFrame(draw);
