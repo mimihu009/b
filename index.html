@@ -46,7 +46,10 @@ let girlRealImg = new Image(); girlRealImg.src = "girl_real.png";
 let girlTroll1Img = new Image(); girlTroll1Img.src = "girl_troll1.png";
 let girlTroll2Img = new Image(); girlTroll2Img.src = "girl_troll2.png";
 let girlTroll3Img = new Image(); girlTroll3Img.src = "girl_troll3.png";
+// --- ÂM THANH ---
 let hitSound = new Audio("hit.mp3");
+let romanticMusic = new Audio("romantic.mp3");
+romanticMusic.loop = true; // Cho nhạc lặp lại ở đoạn kết
 
 // --- 2 ẢNH MỚI TOANH CHO MÀN CUỐI (BOY FINAL & GIRL FINAL) ---
 let boyFinalImg = new Image(); boyFinalImg.src = "boy_final.png";
@@ -134,7 +137,7 @@ function draw() {
         // --- CHỐNG LỖI MÁY BAY ---
         else { ctx.fillStyle = "white"; ctx.fillRect(80, planeY, 80, 50); }
         ctx.fillStyle = "white"; ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
-        if (gameOverM2) ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
+        if (gameOverM2) ctx.fillStyle = "red"; ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
     } 
     else if (scene === 2.5) {
         ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500);
@@ -153,45 +156,46 @@ function draw() {
     // --- MÀN 3: GẶP NHAU VỚI CHỐNG LỖI HIỂN THỊ ---
     // ========================================================
     else if (scene === 3) {
-        ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
-        if (!met) {
-            boyX += 3; // Tăng tốc độ đi lại
-            girlX -= 3;
-            if (boyX >= girlX - 100) {
-                met = true;
-                if(!hasShowedPopup) {
-                    document.getElementById('popup-overlay').style.display = 'flex';
-                    hasShowedPopup = true;
-                }
-            }
-        } else {
-            if (Math.random() < 0.2) hearts.push({x: boyX+70, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
-            ctx.fillStyle = "white"; ctx.fillText("FINALLY MEET! 💖", 290, 180);
-        }
-        
-        // --- Vẽ BOY FINAL (150x150) VỚI CHỐNG LỖI ---
-        // Má kiểm tra nếu ảnh `boyFinalImg` chưa kịp load thì vẽ ô vuông xanh dương dự phòng
-        if (boyFinalImg.complete && boyFinalImg.naturalWidth !== 0) {
-            ctx.drawImage(boyFinalImg, boyX, 240, 150, 150);
-        } else {
-            ctx.fillStyle = "blue"; // Màu ô vuông dự phòng
-            ctx.fillRect(boyX, 260, 60, 100); // Vẽ ô vuông dự phòng
-        }
+        ctx.fillStyle = "#ffb6c1"; 
+    ctx.fillRect(0, 0, 800, 500);
 
-        // --- Vẽ GIRL FINAL (150x150) VỚI CHỐNG LỖI ---
-        // Má kiểm tra nếu ảnh `girlFinalImg` chưa kịp load thì vẽ ô vuông hồng dự phòng
-        if (girlFinalImg.complete && girlFinalImg.naturalWidth !== 0) {
-            ctx.drawImage(girlFinalImg, girlX, 240, 150, 150);
-        } else {
-            ctx.fillStyle = "#ff69b4"; // Màu ô vuông dự phòng
-            ctx.fillRect(girlX, 260, 60, 100); // Vẽ ô vuông dự phòng
+    if (!met) {
+        boyX += 3; // Tốc độ đi lại gần
+        girlX -= 3;
+        if (boyX >= girlX - 100) {
+            met = true;
+            // HIỆN POP-UP VÀ PHÁT NHẠC
+            if(!hasShowedPopup) {
+                document.getElementById('popup-overlay').style.display = 'flex';
+                romanticMusic.play().catch(()=>{}); // Bật nhạc lãng mạn
+                hasShowedPopup = true;
+            }
         }
-        
-        hearts.forEach((h, i) => {
-            ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
-            h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
-        });
-        ctx.globalAlpha = 1;
+    } else {
+        if (Math.random() < 0.2) hearts.push({x: boyX+70, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
+        ctx.fillStyle = "white"; ctx.fillText("FINALLY MEET! 💖", 290, 180);
+    }
+
+    // Vẽ BOY FINAL (Nếu lỗi ảnh thì vẽ ô vuông xanh)
+    if (boyFinalImg.complete && boyFinalImg.naturalWidth !== 0) {
+        ctx.drawImage(boyFinalImg, boyX, 240, 150, 150);
+    } else {
+        ctx.fillStyle = "blue"; ctx.fillRect(boyX, 260, 60, 100);
+    }
+
+    // Vẽ GIRL FINAL (Nếu lỗi ảnh thì vẽ ô vuông hồng)
+    if (girlFinalImg.complete && girlFinalImg.naturalWidth !== 0) {
+        ctx.drawImage(girlFinalImg, girlX, 240, 150, 150);
+    } else {
+        ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 260, 60, 100);
+    }
+
+    // Vẽ trái tim bay
+    hearts.forEach((h, i) => {
+        ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
+        h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
+    });
+    ctx.globalAlpha = 1;
     }
     requestAnimationFrame(draw);
 }
