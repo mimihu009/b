@@ -120,6 +120,7 @@ let hitSound = new Audio("hit.mp3");
 
 // --- BIẾN GAME ---
 let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
+    let lastCloudTime = 0; // Biến lưu thời điểm cuối cùng tạo mây
 let planeY = 300, planeX = 80, obstacles = [], progress = 0, gameOverM2 = false;
 let girls = [], feedbackText = "", feedbackTime = 0;
 let boyX = 50, girlX = 650, met = false, hasShowedPopup = false;
@@ -207,16 +208,28 @@ function draw() {
             planeY = Math.max(0, Math.min(400, planeY));
 
           // Tần suất tạo mây (Giảm từ 0.05 xuống 0.02 cho dễ thở)
-            if (progress < 90 && Math.random() < 0.02) { 
-                let scale = 0.6 + Math.random() * 1.2;
-                obstacles.push({
-                    x: 800, 
-                    y: Math.random() * 400, 
-                    w: 120 * scale, 
-                    h: 70 * scale,
-                    speed: 3 + Math.random() * 3, // Má cũng giảm nhẹ tốc độ bay của mây luôn
-                    imgIndex: Math.floor(Math.random() * 3)
-                });
+          // --- LOGIC TẠO MÂY CHỐNG DÍNH CHÙM (DỄ CHƠI 100%) ---
+            let currentTime = Date.now(); // Lấy thời gian hiện tại (mili giây)
+
+            // CẤP PHÉP: Chỉ tạo mây nếu đã trôi qua ít nhất 2000ms (2 giây) kể từ đám mây trước
+            if (progress < 90 && (currentTime - lastCloudTime) > 2000) { 
+                
+                // Vẫn dùng random một chút để vị trí mây không bị quá máy móc
+                if (Math.random() < 0.3) { 
+                    let scale = 0.6 + Math.random() * 1.0; // Mây to vừa phải
+                    
+                    obstacles.push({
+                        x: 800, 
+                        y: 50 + Math.random() * 350, // Tránh mây xuất hiện quá sát mép trên/dưới
+                        w: 120 * scale, 
+                        h: 70 * scale,
+                        speed: 3 + Math.random() * 2, // Mây bay chậm lững lờ
+                        imgIndex: Math.floor(Math.random() * 3)
+                    });
+                    
+                    // CẬP NHẬT: Lưu lại thời điểm vừa tạo mây xong
+                    lastCloudTime = currentTime; 
+                }
             }
 
             // Vẽ mây và check va chạm
