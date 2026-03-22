@@ -80,6 +80,7 @@ let girls = [], feedbackText = "", feedbackTime = 0;
 let boyX = 50, girlX = 650, met = false, hasShowedPopup = false, flagAnimTime = 0;
 let keys = {}, isTransition = false, transitionText = "", transitionTimer = 0, nextScene = 1, typingIdx = 0;
     let planeSpeedBase = 1; // Hệ số tốc độ ban đầu
+    let flagScale = 1.8; // Hệ số tỷ lệ cờ (Ví dụ: 1.8 = to gấp 1.8 lần)
 
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
@@ -115,6 +116,7 @@ function initMiniGame() {
     progress = 0; 
     gameOverM2 = false;
     planeSpeedBase = 1; // Reset tốc độ về ban đầu để chơi lại từ từ
+    flagScale = 1.8; // Đảm bảo cờ luôn to chà bá khi chơi lại
     lastCloudTime = 0;
 }
 
@@ -273,19 +275,32 @@ function draw() {
             ctx.fillText("SPEED: " + Math.floor(planeSpeedBase * 800) + " KM/H", 30, 80);
 
             // Về đích
+// --- XỬ LÝ VỀ ĐÍCH: CỜ TO VÀ THẤP ---
             if (progress >= 95) {
-                let flagX = 800 - (progress - 95) * 150; // Cờ hiện ra nhanh hơn
+                // Cờ hiện ra nhanh hơn theo máy bay
+                let flagX = 800 - (progress - 95) * 150 * planeSpeedBase; 
                 flagAnimTime++;
                 let cFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
-                if (cFlag.complete) ctx.drawImage(cFlag, flagX, 200, 150, 100);
-                if (flagX <= planeX + 130) { 
-                    planeSpeedBase = 1; // Reset tốc độ cho lần chơi sau
-                    startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
-                    initMiniGame(); 
+                
+                if (cFlag.complete) {
+                    // Tính toán kích thước cờ to ra
+                    let flagW = 150 * flagScale; // Chiều rộng mới
+                    let flagH = 100 * flagScale; // Chiều cao mới
+
+                    // Tính toán vị trí Y: Nằm sát mép dưới (500 là chiều cao canvas)
+                    let flagY = 500 - flagH; 
+                    
+                    // Vẽ cây cờ to và thấp
+                    ctx.drawImage(cFlag, flagX, flagY, flagW, flagH);
+
+                    // Check va chạm với cờ: Cần điều chỉnh phạm vi va chạm cho cờ to
+                    if (flagX <= planeX + 130 && planeY + 80 >= flagY) { 
+                        planeSpeedBase = 1; // Reset tốc độ cho lần chơi sau
+                        startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
+                        initMiniGame(); 
+                    }
                 }
             }
-        }
-
         // Vẽ Máy bay & Chữ Crashed
         if (gameOverM2) {
             ctx.fillStyle = "red";
