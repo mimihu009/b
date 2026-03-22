@@ -58,7 +58,6 @@ let girlTroll3Img = new Image(); girlTroll3Img.src = "girl_troll3.png";
 // --- KHAI BÁO 2 ẢNH FLAG ĐỂ CHUYỂN ĐỘNG ---
 let flag1Img = new Image(); flag1Img.src = "flag1.png";
 let flag2Img = new Image(); flag2Img.src = "flag2.png";
-let flagAnimTime = 0; // Cực kỳ quan trọng, thiếu cái này là game đứng hình!
 // --- KHAI BÁO ẢNH BACKGROUND (NHỚ ĐÚNG TÊN FILE TRÊN GITHUB) ---
 let bg1Img = new Image(); bg1Img.src = "bg1.jpg";
 let bg2Img = new Image(); bg2Img.src = "bg2.jpg";
@@ -73,6 +72,7 @@ let boyFinalImg = new Image(); boyFinalImg.src = "boy_final.png";
 let girlFinalImg = new Image(); girlFinalImg.src = "girl_final.png";
 
 // ===== 2. BIẾN GAME =====
+    let flagAnimTime = 0; // Cực kỳ quan trọng, thiếu cái này là game đứng hình!
 let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
 let planeY = 250, planeV = 0, gravity = 0.4, obstacles = [], progress = 0, gameOverM2 = false;
 let girls = [], feedbackText = "", feedbackTime = 0;
