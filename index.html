@@ -9,9 +9,55 @@
         body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #111; overflow: hidden; font-family: 'Press Start 2P', cursive; }
         #game-container { position: relative; border: 4px solid #fff; }
         canvas { display: block; background-color: #000; cursor: crosshair; }
-        #popup-overlay { position: absolute; top: 0; left: 0; width: 800px; height: 500px; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; z-index: 10; }
-        .popup-content { background: #ffb6c1; padding: 30px; border: 5px solid #fff; border-radius: 20px; color: #d63384; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+       /* --- ĐÃ ĐỘ: POP-UP NỀN ĐEN, CHỮ HỒNG, ẢNH TO --- */
+        #popup-overlay {
+            position: absolute; top: 0; left: 0; width: 800px; height: 500px;
+            background: rgba(0, 0, 0, 0.85); /* Nền đen mờ quyến rũ */
+            display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10; 
+        }
+        .popup-content {
+            background: #000; /* Nền nội dung đen tuyền */
+            padding: 20px; 
+            border: 5px solid #ff69b4; /* Viền hồng neon rực rỡ */
+            border-radius: 20px; 
+            color: #ff69b4; /* Chữ hồng toàn bộ */
+            text-align: center;
+            /* Animation hiện ra cho kịch tính */
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            /* Đảm bảo nội dung không tràn ra ngoài */
+            display: flex; flex-direction: column; align-items: center;
+            max-width: 90%; max-height: 90%;
+        }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        
+        /* Chỉnh tiêu đề H1 */
+        .popup-content h1 { 
+            font-size: 24px; 
+            margin: 0 0 15px 0; 
+            color: #ff69b4; /* Tiêu đề hồng */
+            text-shadow: 0 0 10px #ff69b4; /* Hiệu ứng tỏa sáng */
+        }
+        
+        /* --- ĐÃ ĐỘ: ẢNH TOGETHER TO CHÀ BÁ --- */
+        .popup-content img { 
+            max-width: 600px; /* Chiều rộng tối đa 600px (to gần hết màn) */
+            max-height: 350px; /* Chiều cao tối đa 350px */
+            border-radius: 10px; 
+            margin-bottom: 15px; 
+            border: 3px solid #ff69b4; /* Viền hồng cho ảnh */
+            object-fit: contain; /* Đảm bảo ảnh không bị méo */
+        }
+        
+        /* Chỉnh đoạn văn P */
+        .popup-content p { 
+            font-size: 14px; 
+            line-height: 1.6; 
+            margin: 0; 
+            color: #ff69b4; /* Chữ thường cũng hồng */
+        }
         h1 { font-size: 20px; margin-bottom: 20px; }
         p { font-size: 12px; line-height: 1.5; }
     </style>
