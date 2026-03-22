@@ -115,10 +115,17 @@ function draw() {
     ctx.clearRect(0, 0, 800, 500);
     ctx.font = "12px 'Press Start 2P'";
 
+    // --- MÀN 1: ĐÀO TIỀN ---
     if (scene === 1) {
         if (bg1Img.complete) ctx.drawImage(bg1Img, 0, 0, 800, 500);
         else { ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500); }
-        ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
+
+        // HIỆN CHỮ MÀN 1
+        ctx.fillStyle = "gold"; 
+        ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
+        ctx.fillStyle = "white"; 
+        ctx.fillText("CLICK THE BOY TO EARN MONEY!", 220, 120);
+
         particles.forEach((p, i) => {
             ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 8, 8);
             p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.02;
@@ -130,21 +137,26 @@ function draw() {
         if (animTime > 0) animTime--;
     }
 
+    // --- MÀN 2: BAY ---
     else if (scene === 2) {
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
         else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500); }
+
         if (!gameOverM2) {
             progress += 0.2;
             if (keys["ArrowUp"]) planeY -= 5;
             if (keys["ArrowDown"]) planeY += 5;
             if (planeY < 0) planeY = 0; if (planeY > 440) planeY = 440;
+            
             if (progress < 90 && Math.random() < 0.04) obstacles.push({x: 800, y: Math.random()*450, w: 90, h: 50});
+            
             obstacles.forEach((o, i) => {
                 o.x -= 6;
                 ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(o.x, o.y, o.w, o.h);
                 if (o.x < planeX + 100 && o.x + o.w > planeX + 20 && o.y < planeY + 60 && o.y + o.h > planeY + 20) gameOverM2 = true;
                 if (o.x < -100) obstacles.splice(i, 1);
             });
+
             if (progress >= 95) {
                 let flagX = 800 - (progress - 95) * 100;
                 flagAnimTime++;
@@ -153,19 +165,37 @@ function draw() {
                 if (flagX <= planeX + 100) { scene = 2.5; initMiniGame(); }
             }
         }
+
         ctx.save();
         if (gameOverM2) ctx.globalAlpha = 0.5;
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 120, 80);
         ctx.restore();
+
+        // HIỆN CHỮ MÀN 2
+        ctx.fillStyle = "white";
+        ctx.fillText("PROGRESS: " + Math.floor(progress) + "%", 30, 50);
+        if (gameOverM2) {
+            ctx.fillStyle = "red";
+            ctx.fillText("CRASHED! CLICK TO RETRY", 240, 250);
+        } else {
+            ctx.fillText("USE ARROW KEYS UP/DOWN! ⬆️⬇️", 230, 480);
+        }
     }
 
+    // --- MÀN 2.5: CHỌN BẠN GÁI ---
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
         else { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, 0, 800, 500); }
+
+        // CHỮ HƯỚNG DẪN CHỌN
+        ctx.fillStyle = "white";
+        ctx.fillText("PICK YOUR REAL LOVE! 😏", 260, 80);
+
         if (feedbackTime > 0) {
             ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime";
-            ctx.fillText(feedbackText, 300, 130); feedbackTime--;
+            ctx.fillText(feedbackText, 310, 130); feedbackTime--;
         }
+
         girls.forEach(g => {
             ctx.fillStyle = "#ffb6c1"; ctx.fillRect(g.x, g.y, 160, 220);
             if (g.img.complete) {
@@ -177,9 +207,11 @@ function draw() {
         });
     }
 
+    // --- MÀN 3: GẶP NHAU ---
     else if (scene === 3) {
         if (bg3Img.complete) ctx.drawImage(bg3Img, 0, 0, 800, 500);
         else { ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500); }
+        
         if (!met) {
             boyX += 2; girlX -= 2;
             if (boyX >= girlX - 100) {
@@ -190,7 +222,12 @@ function draw() {
                     hasShowedPopup = true;
                 }
             }
+        } else {
+            // CHỮ KẾT THÚC
+            ctx.fillStyle = "white";
+            ctx.fillText("HAPPY ENDING! 💖", 310, 150);
         }
+
         if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 240, 150, 150);
         if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 240, 150, 150);
     }
