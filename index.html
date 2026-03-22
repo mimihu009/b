@@ -137,7 +137,7 @@ canvas.addEventListener("mousedown", (e) => {
                 if (g.isReal) { 
                     feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60;
                     setTimeout(() => { 
-                        startTransition("FINALLY... THIS MOMENT... I HAVE BEEN WAITING FOR SO LONG, I HOPE IT WILL NEVER END...", 3, 600); 
+                        startTransition(<p>"FINALLY... THIS MOMENT... "<br>"I HAVE BEEN WAITING FOR SO LONG,"<br> "I HOPE IT WILL NEVER END...", 3, 600); 
                     }, 1000);
                 } else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
