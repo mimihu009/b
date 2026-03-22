@@ -9,125 +9,150 @@
         body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #111; overflow: hidden; font-family: 'Press Start 2P', cursive; }
         #game-container { position: relative; border: 4px solid #fff; width: 800px; height: 500px; background: #000; }
         canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        /* POP-UP: Nằm trên Canvas (z-index: 10) */
         #popup-overlay {
             position: absolute; top: 0; left: 0; width: 800px; height: 500px;
             background: rgba(0, 0, 0, 0.7); display: none;
             flex-direction: column; justify-content: center; align-items: center;
             color: white; text-align: center; z-index: 10;
         }
-        .popup-content {
-            background: #ffb6c1; padding: 30px; border: 5px solid #fff;
-            border-radius: 20px; color: #d63384; position: relative;
-        }
-
-        /* TRÁI TIM HTML: Phải nằm TRÊN CÙNG (z-index: 999) */
-        .final-heart {
-            position: absolute; pointer-events: none; z-index: 999;
-            animation: finalHeartFly linear forwards;
-        }
+        .popup-content { background: #ffb6c1; padding: 30px; border: 5px solid #fff; border-radius: 20px; color: #d63384; }
+        .final-heart { position: absolute; pointer-events: none; z-index: 999; animation: finalHeartFly linear forwards; }
         @keyframes finalHeartFly {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translate(calc(var(--speedX) * 1px), calc(var(--speedY) * 1px)) rotate(var(--rotation)); opacity: 0; }
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translate(calc(var(--sx) * 1px), calc(var(--sy) * 1px)) rotate(360deg); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="game" width="800" height="500"></canvas>
-        <div id="popup-overlay">
-            <div class="popup-content">
-                <h1>💖 HAPPY BIRTHDAY! 💖</h1>
-                <img src="together.png" alt="Together" style="max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 20px; border: 3px solid white;">
-                <p>Good Boy!<br>Together Forever! 🥰</p>
-            </div>
+<div id="game-container">
+    <canvas id="game" width="800" height="500"></canvas>
+    <div id="popup-overlay">
+        <div class="popup-content">
+            <h1>💖 HAPPY BIRTHDAY! 💖</h1>
+            <img src="together.png" alt="Together" style="max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 20px; border: 3px solid white;">
+            <p>Good Boy!<br>Together Forever! 🥰</p>
         </div>
     </div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// 1. Khai báo biến
-let scene = 0, money = 0, targetMoney = 1000;
-let boyX = 50, girlX = 650, met = false;
-let isTransition = false, transitionText = "", transitionTimer = 0, typingIdx = 0, nextScene = 1;
-let planeY = 250, progress = 0, obstacles = [], gameOverM2 = false;
-let heartInterval = null;
+// --- ÂM THANH ---
+const romanticMusic = new Audio("romantic.mp3"); romanticMusic.loop = true;
+const typeSound = new Audio("typing.mp3");
+const hitSound = new Audio("hit.mp3");
 
-// 2. Load hình ảnh (Fix lỗi load ảnh)
+// --- HÌNH ẢNH ---
 const img = {};
-const assets = {
-    idle: '1.png', hit1: '2.png', hit2: '3.png',
-    bg1: 'bg1.jpg', bg2: 'bg2.jpg', bg3: 'bg3.jpg', bg25: 'bg2_5.jpg',
-    boyFinal: 'boy_final.png', girlFinal: 'girl_final.png',
-    plane: 'plane.png', girlReal: 'girl_real.png'
-};
-for (let key in assets) { img[key] = new Image(); img[key].src = assets[key]; }
+const assets = ['idle', 'hit1', 'hit2', 'plane', 'girlReal', 'troll1', 'troll2', 'troll3', 'bg1', 'bg2', 'bg25', 'bg3', 'boyFinal', 'girlFinal'];
+assets.forEach(name => { img[name] = new Image(); img[name].src = name + (name.includes('bg') ? '.jpg' : '.png'); });
 
-// 3. Hàm tạo tim HTML đè lên Popup
-function createFinalHeart() {
-    if (!met) return;
-    const h = document.createElement('div');
-    h.className = 'final-heart';
-    const emojis = ['❤️', '💖', '🌹', '💕', '✨'];
-    h.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-    
-    const size = 20 + Math.random() * 30;
-    const dur = 2 + Math.random() * 3;
-    h.style.left = (Math.random() * 750 + 25) + 'px';
-    h.style.bottom = "0px";
-    h.style.fontSize = size + "px";
-    h.style.setProperty('--speedX', (Math.random() - 0.5) * 400);
-    h.style.setProperty('--speedY', -500 - Math.random() * 200);
-    h.style.setProperty('--rotation', (Math.random() - 0.5) * 360 + "deg");
-    h.style.animationDuration = dur + "s";
+const clouds = [];
+const cloudImg = [new Image(), new Image(), new Image()];
+cloudImg[0].src = "cloud1.png"; cloudImg[1].src = "cloud2.png"; cloudImg[2].src = "cloud3.png";
 
-    document.getElementById('game-container').appendChild(h);
-    setTimeout(() => h.remove(), dur * 1000);
+// --- BIẾN GAME ---
+let scene = 0, money = 0, targetMoney = 1000;
+let isTransition = false, transitionText = "", transitionTimer = 0, typingIdx = 0, nextScene = 0;
+let planeY = 250, progress = 0, obstacles = [], keys = {};
+let boyX = 50, girlX = 650, met = false;
+
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+function startTransition(text, target, duration = 150) {
+    isTransition = true; transitionText = text; nextScene = target; transitionTimer = duration; typingIdx = 0;
 }
 
-// 4. Logic Game
+function createHeart() {
+    const h = document.createElement('div');
+    h.className = 'final-heart';
+    h.innerText = '❤️';
+    h.style.left = '400px'; h.style.top = '250px';
+    h.style.setProperty('--sx', (Math.random() - 0.5) * 600);
+    h.style.setProperty('--sy', -500 - Math.random() * 200);
+    h.style.animationDuration = '3s';
+    document.getElementById('game-container').appendChild(h);
+    setTimeout(() => h.remove(), 3000);
+}
+
 canvas.addEventListener("mousedown", () => {
     if (isTransition) return;
     if (scene === 0) scene = 1;
     else if (scene === 1) {
-        money += 50; 
-        if (money >= targetMoney) {
-            isTransition = true; transitionText = "DI CHOI THOI!"; nextScene = 3; transitionTimer = 100;
-        }
+        money += 40; hitSound.currentTime = 0; hitSound.play();
+        if (money >= targetMoney) startTransition("GOT ENOUGH!LET'S GO✈️", 2);
     }
 });
 
+function update() {
+    if (isTransition) {
+        if (typingIdx < transitionText.length) {
+            typingIdx += 0.15;
+            if (typeSound.paused) typeSound.play();
+        } else {
+            typeSound.pause(); typeSound.currentTime = 0;
+        }
+        transitionTimer--;
+        if (transitionTimer <= 0) { isTransition = false; scene = nextScene; typeSound.pause(); }
+        return;
+    }
+
+    if (scene === 2) {
+        progress += 0.2;
+        if (keys["ArrowUp"]) planeY -= 5;
+        if (keys["ArrowDown"]) planeY += 5;
+        if (Math.random() < 0.02) obstacles.push({x: 800, y: Math.random()*400, img: cloudImg[Math.floor(Math.random()*3)]});
+        obstacles.forEach((o, i) => { o.x -= 4; if(o.x < -100) obstacles.splice(i, 1); });
+        if (progress > 100) startTransition("WHERE'S YOUR GF??🤔", 3);
+    }
+    if (scene === 3) {
+        if (!met) {
+            boyX += 2; girlX -= 2;
+            if (boyX >= girlX - 180) {
+                met = true; romanticMusic.play();
+                document.getElementById('popup-overlay').style.display = 'flex';
+                setInterval(createHeart, 200);
+            }
+        }
+    }
+}
+
 function draw() {
+    update();
     ctx.clearRect(0, 0, 800, 500);
+    ctx.font = "14px 'Press Start 2P'";
 
     if (isTransition) {
         ctx.fillStyle = "black"; ctx.fillRect(0, 0, 800, 500);
         ctx.fillStyle = "white"; ctx.textAlign = "center";
-        ctx.fillText(transitionText, 400, 250);
-        transitionTimer--;
-        if (transitionTimer <= 0) { isTransition = false; scene = nextScene; }
+        ctx.fillText(transitionText.substring(0, Math.floor(typingIdx)), 400, 250);
+        ctx.textAlign = "left";
     } 
+    else if (scene === 0) {
+        ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500);
+        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.fillText("MY LOVE GAME 💖", 400, 200);
+        if (Date.now() % 1000 < 500) ctx.fillText("CLICK TO START", 400, 300);
+        ctx.textAlign = "left";
+    }
     else if (scene === 1) {
-        if (img.bg1.complete) ctx.drawImage(img.bg1, 0, 0, 800, 500);
-        ctx.fillStyle = "gold"; ctx.fillText("$" + money, 50, 50);
-        if (img.idle.complete) ctx.drawImage(img.idle, 220, 150, 300, 300);
-    } 
+        if(img.bg1.complete) ctx.drawImage(img.bg1, 0, 0, 800, 500);
+        ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money, 30, 50);
+        ctx.drawImage(img.idle, 250, 150, 300, 300);
+    }
+    else if (scene === 2) {
+        if(img.bg2.complete) ctx.drawImage(img.bg2, 0, 0, 800, 500);
+        obstacles.forEach(o => { if(o.img.complete) ctx.drawImage(o.img, o.x, o.y, 100, 60); });
+        ctx.drawImage(img.plane, 100, planeY, 150, 100);
+    }
     else if (scene === 3) {
-        if (img.bg3.complete) ctx.drawImage(img.bg3, 0, 0, 800, 500);
-        if (!met) {
-            boyX += 3; girlX -= 3;
-            if (boyX >= girlX - 150) {
-                met = true;
-                document.getElementById('popup-overlay').style.display = 'flex';
-                if (!heartInterval) heartInterval = setInterval(createFinalHeart, 100);
-            }
-        }
-        if (img.boyFinal.complete) ctx.drawImage(img.boyFinal, boyX, 200, 200, 200);
-        if (img.girlFinal.complete) ctx.drawImage(img.girlFinal, girlX, 200, 200, 200);
+        if(img.bg3.complete) ctx.drawImage(img.bg3, 0, 0, 800, 500);
+        ctx.drawImage(img.boyFinal, boyX, 200, 200, 200);
+        ctx.drawImage(img.girlFinal, girlX, 200, 200, 200);
     }
     requestAnimationFrame(draw);
 }
