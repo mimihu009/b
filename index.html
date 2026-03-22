@@ -90,7 +90,9 @@ let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 const romanticMusic = new Audio("romantic.mp3");
 romanticMusic.loop = true;
-
+let typingIdx = 0; // Biến để đếm từng chữ cái
+const typeSound = new Audio("typing.mp3"); // Con tìm 1 file âm thanh gõ phím ngắn nhé
+typeSound.loop = false;
 // --- HÌNH ẢNH ---
 let idleImg = new Image(); idleImg.src = "1.png";
 let hit1Img = new Image(); hit1Img.src = "2.png";
@@ -126,10 +128,21 @@ let girls = [], feedbackText = "", feedbackTime = 0;
 let boyX = 50, girlX = 650, met = false, hasShowedPopup = false;
 let flagAnimTime = 0;
 let keys = {};
+    let isTransition = false;
+let transitionText = "";
+let transitionTimer = 0;
+let nextScene = 1;
 
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
-
+// --- SỐ 2: HÀM HỖ TRỢ CHUYỂN CẢNH ---
+function startTransition(text, targetScene, duration = 120) {
+    isTransition = true;
+    transitionText = text;
+    nextScene = targetScene;
+    transitionTimer = duration; // Thời gian chờ (120 = 2s, 600 = 10s)
+    typingIdx = 0; // Reset lại máy đánh chữ
+}
 function initMiniGame() {
     girls = [];
     let correct = Math.floor(Math.random() * 4);
@@ -152,16 +165,19 @@ canvas.addEventListener("mousedown", (e) => {
         money++; animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
-        if (money >= targetMoney) scene = 2;
     } 
     else if (scene === 2 && gameOverM2) resetM2();
     else if (scene === 2.5) {
         girls.forEach(g => {
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
                 if (g.isReal) { 
-                    feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60; 
-                    setTimeout(() => { scene = 3; }, 1000); 
-                }
+        feedbackText = "THAT'S RIGHT! 💖"; 
+        feedbackTime = 60; 
+        setTimeout(() => { 
+            // 600 ở cuối chính là 10 giây đó con
+            startTransition("FINALLY... THIS MOMENT...I HAVE BEEN WAITING FOR SO LONG, I HOPE IT WILL NEVER END...", 3, 600); 
+        }, 1500); 
+    }
                 else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
         });
@@ -172,6 +188,36 @@ canvas.addEventListener("mousedown", (e) => {
 // --- 2. VÒNG LẶP VẼ (MAIN LOOP) ---
 // ========================================================
 function draw() {
+if (isTransition) {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, 800, 500);
+        
+        // Hiệu ứng Typing: Cứ mỗi 3 khung hình thì hiện thêm 1 chữ
+        let currentDisplay = transitionText.substring(0, Math.floor(typingIdx));
+        if (typingIdx < transitionText.length) {
+            typingIdx += 0.2; // Tốc độ hiện chữ, con muốn chậm nữa thì giảm xuống 0.1
+            // Phát âm thanh tíc tíc khi hiện chữ mới
+            if (Math.floor(typingIdx) > Math.floor(typingIdx - 0.2)) {
+                typeSound.currentTime = 0;
+                typeSound.play().catch(()=>{});
+            }
+        }
+
+        ctx.fillStyle = "white";
+        ctx.font = "14px 'Press Start 2P'";
+        ctx.textAlign = "center";
+        // Vẽ chữ ra giữa màn hình
+        ctx.fillText(currentDisplay, 400, 250);
+        ctx.textAlign = "left"; 
+
+        transitionTimer--;
+        if (transitionTimer <= 0) {
+            isTransition = false;
+            scene = nextScene;
+        }
+        requestAnimationFrame(draw);
+        return; 
+    }
     ctx.clearRect(0, 0, 800, 500);
     ctx.font = "12px 'Press Start 2P'";
 
@@ -179,7 +225,7 @@ function draw() {
     if (scene === 1) {
         if (bg1Img.complete) ctx.drawImage(bg1Img, 0, 0, 800, 500);
         ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
-        ctx.fillStyle = "white"; ctx.fillText("CLICK THE BOY TO WORK!", 220, 120);
+        ctx.fillStyle = "white"; ctx.fillText("CLICK TO WORK!", 220, 120);
         particles.forEach((p, i) => {
             ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 8, 8);
             p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.02;
@@ -259,7 +305,7 @@ function draw() {
                     let fR = cFlag.naturalWidth / cFlag.naturalHeight;
                     ctx.drawImage(cFlag, flagX, 200, 150, 150 / fR);
                 }
-                if (flagX <= planeX + 130) { scene = 2.5; initMiniGame(); }
+if (flagX <= planeX + 130) { startTransition("OH NO, SO CROWDED!!", 2.5); initMiniGame(); }
             }
         }
 
@@ -282,7 +328,7 @@ function draw() {
     // --- MÀN 2.5 ---
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
-        ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR REAL LOVE? 😏", 220, 80);
+        ctx.fillStyle = "white"; ctx.fillText("WHERE IS YOUR GF? 🤔", 220, 80);
         if (feedbackTime > 0) { 
             ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; 
             ctx.fillText(feedbackText, 310, 130); 
