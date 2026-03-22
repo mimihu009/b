@@ -39,7 +39,7 @@
                 <h1>💖 HAPPY BIRTHDAY! 💖</h1>
                 <img src="together.png" alt="Together" style="max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 20px; border: 3px solid white;">
                 <p>Good Boy!<br>Together Forever! 🥰</p>
-                <p style="margin-top:20px; font-size:10px;">(Nhấn F5 để chơi lại)</p>
+                <p style="margin-top:20px; font-size:10px;">(F5 to replay)</p>
             </div>
         </div>
     </div>
@@ -116,7 +116,7 @@ canvas.addEventListener("mousedown", (e) => {
         money++; animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
-        if (money >= targetMoney) startTransition("GOT ENOUGH MONEY! LET'S GO ✈️", 2, 120);
+        if (money >= targetMoney) startTransition("GOT ENOUGH!LET'S GO✈️", 2, 120);
     } 
     else if (scene === 2 && gameOverM2) { planeY = 300; obstacles = []; progress = 0; gameOverM2 = false; }
     else if (scene === 2.5) {
@@ -135,22 +135,60 @@ canvas.addEventListener("mousedown", (e) => {
 
 function draw() {
     // XỬ LÝ CHUYỂN CẢNH (TYPING)
-    if (isTransition) {
-        ctx.fillStyle = "black"; ctx.fillRect(0, 0, 800, 500);
+ if (isTransition) {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, 800, 500);
+        
         let currentDisplay = transitionText.substring(0, Math.floor(typingIdx));
+        
+        // 1. CHỈ PHÁT SOUND KHI ĐANG GÕ CHỮ
         if (typingIdx < transitionText.length) {
-            typingIdx += 0.2;
+            typingIdx += 0.2; 
             if (Math.floor(typingIdx) > Math.floor(typingIdx - 0.2)) {
-                typeSound.currentTime = 0; typeSound.play().catch(()=>{});
+                typeSound.volume = 1.0; // Đảm bảo có tiếng khi gõ
+                typeSound.currentTime = 0;
+                typeSound.play().catch(()=>{});
+            }
+        } else {
+            // 2. KHI CHỮ ĐÃ HIỆN XONG: ÉP ÂM LƯỢNG VỀ 0 NGAY
+            typeSound.volume = 0;
+            typeSound.pause();
+        }
+
+        // 3. KHI SẮP HẾT 2S HOẶC 10S: KHÔNG CHO PHÁP KÊU NỮA
+        if (transitionTimer < 20) {
+            typeSound.volume = 0;
+            typeSound.pause();
+            typeSound.currentTime = 0;
+        }
+
+        ctx.fillStyle = "white";
+        ctx.font = "14px 'Press Start 2P'";
+        ctx.textAlign = "center";
+        ctx.fillText(currentDisplay, 400, 250);
+        ctx.textAlign = "left"; 
+
+        transitionTimer--;
+
+        // 4. KHI CHÍNH THỨC SANG MÀN MỚI
+        if (transitionTimer <= 0) {
+            isTransition = false;
+            scene = nextScene;
+            
+            // Cú chốt: Xóa sổ âm thanh typing
+            typeSound.pause();
+            typeSound.volume = 0; 
+            typeSound.src = ""; // Xóa nguồn phát để trình duyệt giải phóng bộ nhớ sound này
+            typeSound.load();   // Reset lại đối tượng sound
+            
+            // Nếu là màn 3 thì mới bật nhạc lãng mạn
+            if (scene === 3) {
+                romanticMusic.play().catch(()=>{});
             }
         }
-        ctx.fillStyle = "white"; ctx.font = "14px 'Press Start 2P'"; ctx.textAlign = "center";
-        ctx.fillText(currentDisplay, 400, 250); ctx.textAlign = "left";
-        transitionTimer--;
-        if (transitionTimer <= 0) { isTransition = false; scene = nextScene; }
-        requestAnimationFrame(draw); return; // LỖI CŨ LÀ THIẾU DÒNG TRÊN ĐÂY!
+        requestAnimationFrame(draw);
+        return; 
     }
-
     ctx.clearRect(0, 0, 800, 500);
     ctx.font = "12px 'Press Start 2P'";
 
