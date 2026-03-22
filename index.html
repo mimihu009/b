@@ -84,17 +84,19 @@ window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
 // --- HÀM CHUYỂN CẢNH CÓ DỪNG SOUND ---
+// --- HÀM CHUYỂN CẢNH (BẢN SỬA LỖI MẤT SOUND) ---
 function startTransition(text, targetScene, duration = 120) {
-    // 1. Dừng âm thanh typing ngay lập tức
-    typeSound.pause();
-    typeSound.currentTime = 0;
+    // 1. Hồi sinh âm thanh: Nạp lại file mp3 trước khi gõ chữ
+    typeSound.src = "typing.mp3"; 
+    typeSound.load(); 
+    typeSound.volume = 1.0;
 
-    // 2. Thiết lập chuyển cảnh
+    // 2. Thiết lập các thông số khác
     isTransition = true;
     transitionText = text;
     nextScene = targetScene;
     transitionTimer = duration;
-    typingIdx = 0;
+    typingIdx = 0; 
 }
 function initMiniGame() {
     girls = [];
