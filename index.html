@@ -125,7 +125,7 @@ canvas.addEventListener("mousedown", (e) => {
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
                 if (g.isReal) { 
                     feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60;
-                    setTimeout(() => { startTransition(<p>"FINALLY... THIS MOMENT..."<br>" I HAVE BEEN WAITING FOR SO LONG", 3, 300); }, 1000);
+                    setTimeout(() => { startTransition("FINALLY... THIS MOMENT... I HAVE BEEN WAITING FOR SO LONG", 3, 300); }, 1000);
                 } else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
         });
