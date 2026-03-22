@@ -79,6 +79,7 @@ let lastCloudTime = 0, planeY = 300, planeX = 80, obstacles = [], progress = 0, 
 let girls = [], feedbackText = "", feedbackTime = 0;
 let boyX = 50, girlX = 650, met = false, hasShowedPopup = false, flagAnimTime = 0;
 let keys = {}, isTransition = false, transitionText = "", transitionTimer = 0, nextScene = 1, typingIdx = 0;
+    let planeSpeedBase = 1; // Hệ số tốc độ ban đầu
 
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
@@ -108,6 +109,14 @@ function initMiniGame() {
         girls.push({ x: 10 + i * 195, y: 160, w: 190, h: 270, img: isR ? girlRealImg : trolls[tCount++], isReal: isR });
     }
 }
+    function resetM2() {
+    planeY = 300; 
+    obstacles = []; 
+    progress = 0; 
+    gameOverM2 = false;
+    planeSpeedBase = 1; // Reset tốc độ về ban đầu để chơi lại từ từ
+    lastCloudTime = 0;
+}
 
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
@@ -120,7 +129,8 @@ canvas.addEventListener("mousedown", (e) => {
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
         if (money >= targetMoney) startTransition("GOT ENOUGH!LET'S GO✈️", 2, 120);
     } 
-    else if (scene === 2 && gameOverM2) { planeY = 300; obstacles = []; progress = 0; gameOverM2 = false; }
+    else if (scene === 2 && gameOverM2) { planeY = 300; obstacles = []; progress = 0; gameOverM2 = false; planeSpeedBase = 1; // THÊM DÒNG NÀY ĐỂ RESET TỐC ĐỘ
+    }
     else if (scene === 2.5) {
         girls.forEach(g => {
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
@@ -207,36 +217,82 @@ function draw() {
         if (img.complete) ctx.drawImage(img, 220, 140, 360, 360);
         if (animTime > 0) animTime--;
     }
-    else if (scene === 2) {
+ else if (scene === 2) {
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
+        
         if (!gameOverM2) {
-            progress += (100 / (30 * 60));
+            // --- TĂNG TỐC ĐỘ THEO THỜI GIAN ---
+            // Càng đi, planeSpeedBase càng tăng từ 1 lên khoảng 2.5
+            planeSpeedBase += 0.0015; 
+
+            // Tính toán progress: 100% / (15s * 60fps) * Hệ số tốc độ
+            // Tốc độ km sẽ nhanh dần đều
+            progress += (100 / (15 * 60)) * planeSpeedBase; 
+            
             let distanceKM = Math.max(0, Math.floor(1300 - (progress * 13)));
-            if (keys["ArrowUp"]) planeY -= 6; if (keys["ArrowDown"]) planeY += 6;
+
+            // Điều khiển máy bay (Má tăng độ nhạy phím để con né mây lúc nhanh)
+            let currentPlaneSpeed = 6 * planeSpeedBase;
+            if (keys["ArrowUp"]) planeY -= currentPlaneSpeed;
+            if (keys["ArrowDown"]) planeY += currentPlaneSpeed;
             planeY = Math.max(0, Math.min(400, planeY));
+
             let currentTime = Date.now();
-            if (progress < 90 && (currentTime - lastCloudTime) > 2000) {
+            // Mây cũng sẽ xuất hiện nhanh hơn và bay nhanh hơn theo máy bay
+            if (progress < 90 && (currentTime - lastCloudTime) > (2000 / planeSpeedBase)) { 
                 if (Math.random() < 0.3) {
                     let scale = 0.6 + Math.random() * 1.0;
-                    obstacles.push({x: 800, y: 50 + Math.random()*350, w: 120*scale, h: 70*scale, speed: 3 + Math.random()*2, imgIndex: Math.floor(Math.random()*3)});
-                    lastCloudTime = currentTime;
+                    obstacles.push({
+                        x: 800, 
+                        y: 50 + Math.random() * 350, 
+                        w: 120 * scale, 
+                        h: 70 * scale,
+                        speed: (3 + Math.random() * 2) * planeSpeedBase, // Mây bay nhanh dần theo máy bay
+                        imgIndex: Math.floor(Math.random() * 3)
+                    });
+                    lastCloudTime = currentTime; 
                 }
             }
+
+            // Vẽ mây và check va chạm
             obstacles.forEach((o, i) => {
-                o.x -= o.speed; let cImg = cloudSprites[o.imgIndex];
+                o.x -= o.speed;
+                let cImg = cloudSprites[o.imgIndex];
                 if (cImg.complete) ctx.drawImage(cImg, o.x, o.y, o.w, o.h);
-                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) gameOverM2 = true;
+                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) {
+                    gameOverM2 = true; planeSpeedBase = 1; // Reset ngay khi vừa đâm
+                }
                 if (o.x < -300) obstacles.splice(i, 1);
             });
-            ctx.fillStyle = "white"; ctx.font = "16px 'Press Start 2P'"; ctx.fillText("DISTANCE: " + distanceKM + " KM", 30, 50);
+
+            // Hiển thị Distance
+            ctx.fillStyle = "white";
+            ctx.font = "16px 'Press Start 2P'";
+            ctx.fillText("DISTANCE: " + distanceKM + " KM", 30, 50);
+            ctx.font = "10px 'Press Start 2P'";
+            ctx.fillText("SPEED: " + Math.floor(planeSpeedBase * 800) + " KM/H", 30, 80);
+
+            // Về đích
             if (progress >= 95) {
-                let flagX = 800 - (progress - 95) * 100; flagAnimTime++;
-                let cFlag = (Math.floor(flagAnimTime/15)%2===0) ? flag1Img : flag2Img;
+                let flagX = 800 - (progress - 95) * 150; // Cờ hiện ra nhanh hơn
+                flagAnimTime++;
+                let cFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
                 if (cFlag.complete) ctx.drawImage(cFlag, flagX, 200, 150, 100);
-                if (flagX <= planeX + 130) { startTransition("OH NO, SO CROWDED!!", 2.5, 120); initMiniGame(); }
+                if (flagX <= planeX + 130) { 
+                    planeSpeedBase = 1; // Reset tốc độ cho lần chơi sau
+                    startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
+                    initMiniGame(); 
+                }
             }
         }
-        if (gameOverM2) { ctx.fillStyle = "red"; ctx.font = "20px 'Press Start 2P'"; ctx.fillText("CRASHED!", 320, 220); }
+
+        // Vẽ Máy bay & Chữ Crashed
+        if (gameOverM2) {
+            ctx.fillStyle = "red";
+            ctx.font = "20px 'Press Start 2P'";
+            ctx.fillText("CRASHED!", 320, 220);
+            planeSpeedBase = 1; // Reset tốc độ khi đâm
+        }
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
     }
     else if (scene === 2.5) {
