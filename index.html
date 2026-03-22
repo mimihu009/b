@@ -102,7 +102,7 @@ canvas.addEventListener("mousedown", (e) => {
         animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
-        if (money >= targetMoney) startTransition("GOT $1000! NOW FLY TO HER! ✈️", 2, 120);
+        if (money >= targetMoney) startTransition("GOT ENOUGH!LET'S GO✈️", 2, 120);
     } 
     else if (scene === 2 && gameOverM2) { resetM2(); }
     else if (scene === 2.5) {
