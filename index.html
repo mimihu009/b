@@ -156,41 +156,41 @@ function draw() {
     // --- MÀN 3: GẶP NHAU VỚI CHỐNG LỖI HIỂN THỊ ---
     // ========================================================
     else if (scene === 3) {
-        ctx.fillStyle = "#ffb6c1"; 
+    ctx.fillStyle = "#ffb6c1"; 
     ctx.fillRect(0, 0, 800, 500);
 
     if (!met) {
-        boyX += 3; // Tốc độ đi lại gần
+        boyX += 3; 
         girlX -= 3;
         if (boyX >= girlX - 100) {
             met = true;
-            // HIỆN POP-UP VÀ PHÁT NHẠC
-            if(!hasShowedPopup) {
+            // CHỈ CHẠY ĐÚNG 1 LẦN DUY NHẤT KHI CHẠM NHAU
+            if(hasShowedPopup === false) { 
                 document.getElementById('popup-overlay').style.display = 'flex';
-                romanticMusic.play().catch(()=>{}); // Bật nhạc lãng mạn
-                hasShowedPopup = true;
+                
+                // GỌI LỆNH PHÁT NHẠC ĐÃ TẠO Ở TRÊN
+                romanticMusic.play().catch(e => console.log("Cần click để phát nhạc"));
+                
+                hasShowedPopup = true; // Khóa lại ngay lập tức
             }
         }
     } else {
+        // Trái tim bay
         if (Math.random() < 0.2) hearts.push({x: boyX+70, y: 250, sx: (Math.random()-0.5)*8, sy: -5, life: 1});
-        ctx.fillStyle = "white"; ctx.fillText("FINALLY MEET! 💖", 290, 180);
+        ctx.fillStyle = "white"; 
+        ctx.fillText("FINALLY MEET! 💖", 290, 180);
     }
 
-    // Vẽ BOY FINAL (Nếu lỗi ảnh thì vẽ ô vuông xanh)
+    // Phần vẽ Boy/Girl Final giữ nguyên như cũ...
     if (boyFinalImg.complete && boyFinalImg.naturalWidth !== 0) {
         ctx.drawImage(boyFinalImg, boyX, 240, 150, 150);
-    } else {
-        ctx.fillStyle = "blue"; ctx.fillRect(boyX, 260, 60, 100);
-    }
+    } else { ctx.fillStyle = "blue"; ctx.fillRect(boyX, 260, 60, 100); }
 
-    // Vẽ GIRL FINAL (Nếu lỗi ảnh thì vẽ ô vuông hồng)
     if (girlFinalImg.complete && girlFinalImg.naturalWidth !== 0) {
         ctx.drawImage(girlFinalImg, girlX, 240, 150, 150);
-    } else {
-        ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 260, 60, 100);
-    }
+    } else { ctx.fillStyle = "#ff69b4"; ctx.fillRect(girlX, 260, 60, 100); }
 
-    // Vẽ trái tim bay
+    // Vẽ tim
     hearts.forEach((h, i) => {
         ctx.globalAlpha = h.life; ctx.fillStyle = "red"; ctx.fillText("❤", h.x, h.y);
         h.x += h.sx; h.y += h.sy; h.life -= 0.02; if(h.life <= 0) hearts.splice(i, 1);
