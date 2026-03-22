@@ -1,47 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <meta charset="UTF-8">
-    <title>LOVE✈️💖</title>
-    <style>
-        body { background: #222; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Press Start 2P', cursive; }
-        canvas { background: #3d3d3d; border: 5px solid #ffb6c1; image-rendering: pixelated; cursor: pointer; position: relative; z-index: 1; }
-        #popup-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; cursor: pointer;
-        }
-        #popup-content {
-            background: white; padding: 15px; border-radius: 20px; border: 8px solid #ffb6c1;
-            text-align: center; max-width: 80%; animation: zoomIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        #popup-img { max-width: 100%; max-height: 70vh; border-radius: 10px; display: block; margin: 0 auto 15px; }
-        #popup-text { color: #ff69b4; font-size: 14px; line-height: 1.5; text-transform: uppercase; }
-        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    </style>
-</head>
-<body>
-
-    <div id="popup-overlay" onclick="this.style.display='none'">
-        <div id="popup-content">
-            <img id="popup-img" src="together.png" alt="Together Forever">
-            <div id="popup-text">HAPPY BIRTHDAY TOGETHER💖<br><br><span style="font-size:8px;">(Click anywhere to close)</span></div>
-        </div>
-    </div>
-
-    <canvas id="game" width="800" height="500"></canvas>
-
 <script>
 // ========================================================
-// --- 1. KHAI BÁO BIẾN TOÀN CỤC ---
+// --- 1. KHAI BÁO BIẾN & TÀI NGUYÊN ---
 // ========================================================
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
 const romanticMusic = new Audio("romantic.mp3");
 romanticMusic.loop = true;
 
-// --- TÀI NGUYÊN HÌNH ẢNH & ÂM THANH ---
-// (Nhớ đảm bảo tên file trên GitHub viết thường hết nha)
+// --- HÌNH ẢNH ---
 let idleImg = new Image(); idleImg.src = "1.png";
 let hit1Img = new Image(); hit1Img.src = "2.png";
 let hit2Img = new Image(); hit2Img.src = "3.png";
@@ -58,23 +24,26 @@ let bg25Img = new Image(); bg25Img.src = "bg2_5.jpg";
 let bg3Img = new Image(); bg3Img.src = "bg3.jpg";
 let boyFinalImg = new Image(); boyFinalImg.src = "boy_final.png";
 let girlFinalImg = new Image(); girlFinalImg.src = "girl_final.png";
+
+// --- 3 LOẠI MÂY ---
+let cloud1 = new Image(); cloud1.src = "cloud1.png";
+let cloud2 = new Image(); cloud2.src = "cloud2.png";
+let cloud3 = new Image(); cloud3.src = "cloud3.png";
+let cloudSprites = [cloud1, cloud2, cloud3];
+
 let hitSound = new Audio("hit.mp3");
 
-// --- BIẾN TRẠNG THÁI GAME ---
+// --- BIẾN GAME ---
 let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
-// PlaneY hạ thấp xuống một chút để máy bay to không bị che khuất
 let planeY = 300, planeX = 80, obstacles = [], progress = 0, gameOverM2 = false;
 let girls = [], feedbackText = "", feedbackTime = 0;
-// Boy và Girl xuất hiện thấp xuống cho vừa mắt
-let boyX = 50, girlX = 650, hearts = [], met = false, hasShowedPopup = false;
+let boyX = 50, girlX = 650, met = false, hasShowedPopup = false;
 let flagAnimTime = 0;
 let keys = {};
 
-// Lắng nghe bàn phím để điều khiển máy bay
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// Khởi tạo màn chọn bạn gái (To hơn bản cũ)
 function initMiniGame() {
     girls = [];
     let correct = Math.floor(Math.random() * 4);
@@ -82,57 +51,44 @@ function initMiniGame() {
     let tCount = 0;
     for(let i=0; i<4; i++) {
         let isR = (i === correct);
-        // Tăng chiều rộng và chiều cao của khung hình gái (200x280 thay vì 160x220)
         girls.push({ x: 10 + i * 195, y: 160, w: 190, h: 270, img: isR ? girlRealImg : trolls[tCount++], isReal: isR });
     }
 }
 
 function resetM2() {
-    planeY = 300; planeX = 80; obstacles = []; progress = 0; gameOverM2 = false;
+    planeY = 300; obstacles = []; progress = 0; gameOverM2 = false;
 }
 
-// ========================================================
-// --- 2. XỬ LÝ CLICK CHUỘT ---
-// ========================================================
 canvas.addEventListener("mousedown", (e) => {
     let rect = canvas.getBoundingClientRect();
     let mx = e.clientX - rect.left, my = e.clientY - rect.top;
-
     if (scene === 1) {
         money++; animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
         if (money >= targetMoney) scene = 2;
     } 
-    else if (scene === 2) {
-        if (gameOverM2) resetM2();
-    } 
+    else if (scene === 2 && gameOverM2) resetM2();
     else if (scene === 2.5) {
         girls.forEach(g => {
-            // Click dựa trên kích thước khung hình gái mới (190x270)
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
-                if (g.isReal) {
-                    feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60;
-                    setTimeout(() => { scene = 3; }, 1000);
-                } else {
-                    feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60;
-                }
+                if (g.isReal) { feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60; setTimeout(() => { scene = 3; }, 1000); }
+                else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
         });
     }
 });
 
 // ========================================================
-// --- 3. VÒNG LẶP VẼ (DRAW LOOP) ---
+// --- 2. VÒNG LẶP VẼ (MAIN LOOP) ---
 // ========================================================
 function draw() {
     ctx.clearRect(0, 0, 800, 500);
     ctx.font = "12px 'Press Start 2P'";
 
-    // --- MÀN 1: ĐÀO TIỀN ---
+    // --- MÀN 1 ---
     if (scene === 1) {
         if (bg1Img.complete) ctx.drawImage(bg1Img, 0, 0, 800, 500);
-        else { ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 800, 500); }
         ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
         ctx.fillStyle = "white"; ctx.fillText("CLICK THE BOY TO WORK!", 220, 120);
         particles.forEach((p, i) => {
@@ -142,155 +98,85 @@ function draw() {
         });
         ctx.globalAlpha = 1;
         let img = (animTime > 8) ? hit1Img : (animTime > 0) ? hit2Img : idleImg;
-        if (img.complete) {
-            // --- PHÓNG TO BOY ĐÀO TIỀN (To gấp đôi, 360x360 thay vì 180x180) ---
-            // Căn giữa nhân vật (400 - 360/2 = 220, 430 - 360/2 = 250. Thấp xuống 250 cho đẹp)
-            ctx.drawImage(img, 220, 140, 360, 360);
-        } else { ctx.fillStyle = "blue"; ctx.fillRect(350, 280, 100, 150); }
+        if (img.complete) ctx.drawImage(img, 220, 140, 360, 360);
         if (animTime > 0) animTime--;
     }
 
-    // --- MÀN 2: BAY ---
+    // --- MÀN 2 ---
     else if (scene === 2) {
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
-        else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500); }
         if (!gameOverM2) {
             progress += 0.2;
-            if (keys["ArrowUp"]) planeY -= 6; // Tăng tốc độ bay cho mượt
+            if (keys["ArrowUp"]) planeY -= 6;
             if (keys["ArrowDown"]) planeY += 6;
-            if (planeY < 0) planeY = 0; 
-            // Hạ thấp biên dưới để máy bay to không bị khuất (500 - 100 = 400)
-            if (planeY > 400) planeY = 400;
-            if (progress < 90 && Math.random() < 0.04) obstacles.push({x: 800, y: Math.random()*450, w: 100, h: 60});
+            planeY = Math.max(0, Math.min(400, planeY));
+
+            // Tạo mây ngẫu nhiên
+            if (progress < 90 && Math.random() < 0.04) {
+                let scale = 0.6 + Math.random() * 1.2;
+                obstacles.push({
+                    x: 800, y: Math.random()*400, w: 120*scale, h: 70*scale,
+                    speed: 4 + Math.random()*4, imgIndex: Math.floor(Math.random()*3)
+                });
+            }
+
             obstacles.forEach((o, i) => {
-                o.x -= 7; // Mây bay nhanh hơn cho kịch tính
-                ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(o.x, o.y, o.w, o.h);
-                // Điều chỉnh va chạm cho máy bay to hơn
+                o.x -= o.speed;
+                let cImg = cloudSprites[o.imgIndex];
+                if (cImg.complete) ctx.drawImage(cImg, o.x, o.y, o.w, o.h);
                 if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) gameOverM2 = true;
-                if (o.x < -100) obstacles.splice(i, 1);
+                if (o.x < -300) obstacles.splice(i, 1);
             });
-           if (progress >= 95) {
+
+            if (progress >= 95) {
                 let flagX = 800 - (progress - 95) * 100;
                 flagAnimTime++;
-                let currentFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
-
-                if (currentFlag.complete) {
-                    // GIẢ SỬ: Cái cờ con vẽ nằm ở khoảng giữa hoặc bên trái của khung 800x500
-                    // Má sẽ lấy một vùng hình chữ nhật từ ảnh gốc để vẽ ra game
-                    
-                    // Thông số vùng cắt (Source):
-                    let sx = 0;      // Tọa độ X bắt đầu cắt (con chỉnh lại nếu cờ nằm chỗ khác)
-                    let sy = 0;      // Tọa độ Y bắt đầu cắt
-                    let sW = 800;    // Chiều rộng vùng cắt (Lấy hết chiều rộng)
-                    let sH = 500;    // Chiều cao vùng cắt (Lấy hết chiều cao)
-
-                    // Thông số vẽ ra màn hình (Destination):
-                    // Vì ảnh gốc là 800x500, nếu muốn cờ to mà không dãn, 
-                    // mình phải giữ đúng tỷ lệ 8:5
-                    let drawW = 300; // Độ rộng hiển thị của "cả khung cờ"
-                    let drawH = 187; // Độ cao tương ứng (300 * 500 / 800)
-
-                    ctx.drawImage(currentFlag, sx, sy, sW, sH, flagX, 150, drawW, drawH);
+                let cFlag = (Math.floor(flagAnimTime/15)%2===0) ? flag1Img : flag2Img;
+                if (cFlag.complete) {
+                    let fR = cFlag.naturalWidth / cFlag.naturalHeight;
+                    ctx.drawImage(cFlag, flagX, 200, 150, 150/fR);
                 }
-
-                // Va chạm (Căn theo vị trí máy bay chạm vào vùng có cờ)
-                if (flagX <= planeX + 100) { 
-                    scene = 2.5; 
-                    initMiniGame(); 
-                }
+                if (flagX <= planeX + 130) { scene = 2.5; initMiniGame(); }
             }
+        }
         ctx.save();
         if (gameOverM2) ctx.globalAlpha = 0.5;
-        if (planeImg.complete) {
-            // --- PHÓNG TO MÁY BAY (To gấp rưỡi, 180x120 thay vì 120x80) ---
-            ctx.drawImage(planeImg, planeX, planeY, 180, 120);
-        }
+        if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
         ctx.restore();
-        ctx.fillStyle = "white";
-        ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
-        if (gameOverM2) {
-            ctx.fillStyle = "red"; ctx.fillText("CRASHED! CLICK TO RETRY", 240, 250);
-        } else {
-            ctx.fillText("USE ARROW KEYS UP/DOWN! ⬆️⬇️", 230, 480);
-        }
+        ctx.fillStyle = "white"; ctx.fillText("PROGRESS: " + Math.floor(progress) + "%", 30, 50);
     }
 
-    // --- MÀN 2.5: CHỌN BẠN GÁI ---
+    // --- MÀN 2.5 ---
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
-        else { ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, 0, 800, 500); }
-        ctx.fillStyle = "white"; ctx.fillText("PICK YOUR REAL LOVE! 😏", 260, 80);
-        if (feedbackTime > 0) {
-            ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime";
-            ctx.fillText(feedbackText, 310, 130); feedbackTime--;
-        }
-       girls.forEach(g => {
-            // KHÔNG VẼ ctx.fillRect NỮA (Bỏ nền hồng)
-            
-            if (g.img.complete && g.img.naturalWidth !== 0) {
-                // Giữ tỷ lệ ảnh và vẽ to ra
+        ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR REAL LOVE? 😏", 220, 80);
+        if (feedbackTime > 0) { ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.fillText(feedbackText, 310, 130); feedbackTime--; }
+        
+        girls.forEach(g => {
+            if (g.img.complete) {
                 let ratio = g.img.naturalWidth / g.img.naturalHeight;
-                let dW = 190; // Chiều rộng mong muốn
-                let dH = 190 / ratio; 
-                
-                // Nếu ảnh quá cao, giới hạn lại theo chiều cao khung (270)
-                if (dH > 270) { 
-                    dH = 270; 
-                    dW = dH * ratio; 
-                }
-                
-                // Vẽ trực tiếp ảnh nhân vật lên nền background luôn
-                // Căn giữa vị trí vẽ để click cho chuẩn
-                let drawX = g.x + (190 - dW) / 2;
-                let drawY = g.y + (270 - dH) / 2;
-                
-                ctx.drawImage(g.img, drawX, drawY, dW, dH);
-            } else {
-                // Chỉ hiện chữ Loading rất mờ nếu ảnh chưa tải xong
-                ctx.fillStyle = "rgba(255,255,255,0.3)";
-                ctx.fillText("LOADING...", g.x + 40, g.y + 100);
+                let dW = 170, dH = 170 / ratio;
+                if (dH > 250) { dH = 250; dW = dH * ratio; }
+                ctx.drawImage(g.img, g.x + (g.w-dW)/2, g.y + (g.h-dH)/2, dW, dH);
+                ctx.strokeStyle = "rgba(255, 182, 193, 0.5)"; ctx.strokeRect(g.x, g.y, 190, 270);
             }
         });
     }
 
-    // --- MÀN 3: GẶP NHAU ---
+    // --- MÀN 3 ---
     else if (scene === 3) {
         if (bg3Img.complete) ctx.drawImage(bg3Img, 0, 0, 800, 500);
-        else { ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500); }
-        
         if (!met) {
-            boyX += 2.5; girlX -= 2.5; // Tăng tốc độ gặp nhau
-            // Tăng khoảng cách chạm để nhân vật to gặp nhau không bị đè quá
+            boyX += 2.5; girlX -= 2.5;
             if (boyX >= girlX - 200) {
                 met = true;
-                if (!hasShowedPopup) {
-                    document.getElementById('popup-overlay').style.display = 'flex';
-                    romanticMusic.play().catch(()=>{});
-                    hasShowedPopup = true;
-                }
+                if (!hasShowedPopup) { document.getElementById('popup-overlay').style.display = 'flex'; romanticMusic.play().catch(()=>{}); hasShowedPopup = true; }
             }
-        } else {
-            ctx.fillStyle = "white"; ctx.fillText("HAPPY ENDING! 💖", 310, 150);
-        }
-        if (boyFinalImg.complete) {
-            // --- PHÓNG TO BOY FINAL (To gấp rưỡi, 225x225 thay vì 150x150) ---
-            // Căn Boy ở vị trí thấp xuống (430 - 225 = 205. Thấp xuống 205 cho đẹp)
-            ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
-        }
-        if (girlFinalImg.complete) {
-            // --- PHÓNG TO GIRL FINAL (To gấp rưỡi, 225x225 thay vì 150x150) ---
-            // Căn Girl ở vị trí thấp xuống
-            ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
-        }
+        } else { ctx.fillStyle = "white"; ctx.fillText("HAPPY ENDING! 💖", 310, 150); }
+        if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
+        if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
     }
     requestAnimationFrame(draw);
 }
-
-// ========================================================
-// --- 4. KHỞI ĐỘNG VÀ CHẠY GAME ---
-// ========================================================
-// Bắt đầu chạy game
 draw();
 </script>
-</body>
-</html>
