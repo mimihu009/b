@@ -73,8 +73,11 @@
 
         <div id="popup-overlay">
             <div class="popup-content">
-                <h1>💖 HAPPY ENDING! 💖</h1>
-                <p>Chúc mừng con đã vượt qua thử thách!<br>Yêu nhau dài lâu nhé! 🥰</p>
+                <h1>💖 HAPPY BIRTHDAY! 💖</h1>
+                
+                <img src="together.png" alt="Together" style="max-width: 100%; max-height: 250px; border-radius: 10px; margin-bottom: 20px; border: 3px solid white;">
+
+                <p>Chúc mừng con đã vượt qua thử thách!<br>Together Forever! 🥰</p>
                 <p style="margin-top:20px; font-size:10px;">(Nhấn F5 để chơi lại)</p>
             </div>
         </div>
@@ -187,49 +190,78 @@ function draw() {
         if (animTime > 0) animTime--;
     }
 
-    // --- MÀN 2 ---
+// --- MÀN 2: BAY (1300km về 0km trong 30 giây) ---
     else if (scene === 2) {
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
+        
         if (!gameOverM2) {
-            progress += 0.2;
+            // Tính toán distance: 1300km / (30s * 60fps) ≈ 0.72km mỗi khung hình
+            // Progress ở đây má dùng để đếm từ 0 lên 100% để biết khi nào về đích
+            progress += (100 / (30 * 60)); 
+            
+            // Tính số km hiển thị: 1300 giảm dần về 0
+            let distanceKM = Math.max(0, Math.floor(1300 - (progress * 13)));
+
             if (keys["ArrowUp"]) planeY -= 6;
             if (keys["ArrowDown"]) planeY += 6;
             planeY = Math.max(0, Math.min(400, planeY));
 
-            if (progress < 90 && Math.random() < 0.04) {
+            // Tạo mây
+            if (progress < 90 && Math.random() < 0.05) {
                 let scale = 0.6 + Math.random() * 1.2;
                 obstacles.push({
-                    x: 800, y: Math.random()*400, w: 120*scale, h: 70*scale,
-                    speed: 4 + Math.random()*4, imgIndex: Math.floor(Math.random()*3)
+                    x: 800, y: Math.random() * 400, w: 120 * scale, h: 70 * scale,
+                    speed: 5 + Math.random() * 5, imgIndex: Math.floor(Math.random() * 3)
                 });
             }
 
+            // Vẽ mây và check va chạm
             obstacles.forEach((o, i) => {
                 o.x -= o.speed;
                 let cImg = cloudSprites[o.imgIndex];
                 if (cImg.complete) ctx.drawImage(cImg, o.x, o.y, o.w, o.h);
-                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) gameOverM2 = true;
+                
+                // Va chạm
+                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) {
+                    gameOverM2 = true;
+                }
                 if (o.x < -300) obstacles.splice(i, 1);
             });
 
+            // Hiển thị Distance (km)
+            ctx.fillStyle = "white";
+            ctx.font = "16px 'Press Start 2P'";
+            ctx.fillText("DISTANCE: " + distanceKM + " KM", 30, 50);
+
+            // Xử lý về đích (Khi Distance về 0)
             if (progress >= 95) {
                 let flagX = 800 - (progress - 95) * 100;
                 flagAnimTime++;
-                let cFlag = (Math.floor(flagAnimTime/15)%2===0) ? flag1Img : flag2Img;
+                let cFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
                 if (cFlag.complete) {
                     let fR = cFlag.naturalWidth / cFlag.naturalHeight;
-                    ctx.drawImage(cFlag, flagX, 200, 150, 150/fR);
+                    ctx.drawImage(cFlag, flagX, 200, 150, 150 / fR);
                 }
                 if (flagX <= planeX + 130) { scene = 2.5; initMiniGame(); }
             }
         }
+
+        // --- VẼ MÁY BAY & CHỮ CRASHED ---
         ctx.save();
-        if (gameOverM2) ctx.globalAlpha = 0.5;
+        if (gameOverM2) {
+            ctx.globalAlpha = 0.5; // Làm mờ máy bay khi nổ
+            // HIỆN CHỮ CRASHED KHI THUA
+            ctx.fillStyle = "red";
+            ctx.font = "20px 'Press Start 2P'";
+            ctx.fillText("CRASHED!", 320, 220);
+            ctx.fillStyle = "white";
+            ctx.font = "12px 'Press Start 2P'";
+            ctx.fillText("CLICK TO RETRY", 310, 260);
+        }
+        
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
         ctx.restore();
-        ctx.fillStyle = "white"; ctx.fillText("PROGRESS: " + Math.floor(progress) + "%", 30, 50);
     }
-
     // --- MÀN 2.5 ---
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
