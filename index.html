@@ -307,21 +307,14 @@ else if (scene === 2) {
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
     }
     else if (scene === 2.5) {
-        if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
-        
-        // CHỮ PICK GIRL CỦA CON ĐÂY
+        if (images.bg25.complete) ctx.drawImage(images.bg25, 0, 0, 800, 500);
         ctx.fillStyle = "white"; ctx.font = "18px 'Press Start 2P'"; ctx.textAlign = "center";
-        ctx.fillText("WHO'S YOUR GF??🤔", 400, 80);
+        ctx.fillText("WHERE IS YOUR GIRL?🤔", 400, 80);
         ctx.textAlign = "left";
-
         if (feedbackTime > 0) { 
-            ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; 
-            ctx.textAlign = "center";
-            ctx.fillText(feedbackText, 400, 130); 
-            ctx.textAlign = "left";
-            feedbackTime--; 
+            ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.textAlign = "center";
+            ctx.fillText(feedbackText, 400, 130); ctx.textAlign = "left"; feedbackTime--; 
         }
-
         girls.forEach(g => {
             if (g.img.complete) {
                 let r = g.img.naturalWidth / g.img.naturalHeight;
