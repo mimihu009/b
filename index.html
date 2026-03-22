@@ -6,25 +6,11 @@
     <title>My Love Game 💖</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0; padding: 0; display: flex;
-            justify-content: center; align-items: center;
-            height: 100vh; background-color: #111;
-            overflow: hidden; font-family: 'Press Start 2P', cursive;
-        }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #111; overflow: hidden; font-family: 'Press Start 2P', cursive; }
         #game-container { position: relative; border: 4px solid #fff; }
         canvas { display: block; background-color: #000; cursor: crosshair; }
-        #popup-overlay {
-            position: absolute; top: 0; left: 0; width: 800px; height: 500px;
-            background: rgba(0, 0, 0, 0.7); display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center; z-index: 10;
-        }
-        .popup-content {
-            background: #ffb6c1; padding: 30px; border: 5px solid #fff;
-            border-radius: 20px; color: #d63384;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        #popup-overlay { position: absolute; top: 0; left: 0; width: 800px; height: 500px; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; z-index: 10; }
+        .popup-content { background: #ffb6c1; padding: 30px; border: 5px solid #fff; border-radius: 20px; color: #d63384; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
         h1 { font-size: 20px; margin-bottom: 20px; }
         p { font-size: 12px; line-height: 1.5; }
@@ -45,13 +31,14 @@
     </div>
 
 <script>
-// --- 1. KHAI BÁO BIẾN ---
 let canvas = document.getElementById("game");
 let ctx = canvas.getContext("2d");
-const romanticMusic = new Audio("romantic.mp3");
-romanticMusic.loop = true;
+const romanticMusic = new Audio("romantic.mp3"); romanticMusic.loop = true;
 const typeSound = new Audio("typing.mp3");
+const hitSound = new Audio("hit.mp3");
+const fireworkSound = new Audio("firework.mp3");
 
+// Hình ảnh
 let idleImg = new Image(); idleImg.src = "1.png";
 let hit1Img = new Image(); hit1Img.src = "2.png";
 let hit2Img = new Image(); hit2Img.src = "3.png";
@@ -68,43 +55,31 @@ let bg25Img = new Image(); bg25Img.src = "bg2_5.jpg";
 let bg3Img = new Image(); bg3Img.src = "bg3.jpg";
 let boyFinalImg = new Image(); boyFinalImg.src = "boy_final.png";
 let girlFinalImg = new Image(); girlFinalImg.src = "girl_final.png";
-let togetherImg = new Image(); togetherImg.src = "together.png"; 
-
 let cloudSprites = [new Image(), new Image(), new Image()];
 cloudSprites[0].src = "cloud1.png"; cloudSprites[1].src = "cloud2.png"; cloudSprites[2].src = "cloud3.png";
-let hitSound = new Audio("hit.mp3");
 
+// Biến logic
 let scene = 1, money = 0, animTime = 0, particles = [], targetMoney = 10;
 let lastCloudTime = 0, planeY = 300, planeX = 80, obstacles = [], progress = 0, gameOverM2 = false;
 let girls = [], feedbackText = "", feedbackTime = 0;
-let boyX = 50, girlX = 650, met = false, hasShowedPopup = false, flagAnimTime = 0;
+let boyX = 50, girlX = 650, met = false, flagAnimTime = 0;
 let keys = {}, isTransition = false, transitionText = "", transitionTimer = 0, nextScene = 1, typingIdx = 0;
-    let planeSpeedBase = 1; // Hệ số tốc độ ban đầu
-    let flagScale = 1.8; // Hệ số tỷ lệ cờ (Ví dụ: 1.8 = to gấp 1.8 lần)
-let fireworks = []; // Mảng chứa các hạt pháo hoa
-let isCelebrating = false; // Biến kiểm tra đang nổ pháo hoa
-let celebrationTimer = 0; // Bộ đếm thời gian chờ 5 giây
-const fireworkSound = new Audio("firework.mp3"); // Con tìm 1 file âm thanh pháo hoa nổ nhé
-fireworkSound.loop = false;
-    
+let planeSpeedBase = 1, flagScale = 1.8, fireworks = [], isCelebrating = false, celebrationTimer = 0;
+
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// --- HÀM CHUYỂN CẢNH CÓ DỪNG SOUND ---
-// --- HÀM CHUYỂN CẢNH (BẢN SỬA LỖI MẤT SOUND) ---
 function startTransition(text, targetScene, duration = 120) {
-    // 1. Hồi sinh âm thanh: Nạp lại file mp3 trước khi gõ chữ
     typeSound.src = "typing.mp3"; 
     typeSound.load(); 
     typeSound.volume = 1.0;
-
-    // 2. Thiết lập các thông số khác
     isTransition = true;
     transitionText = text;
     nextScene = targetScene;
     transitionTimer = duration;
     typingIdx = 0; 
 }
+
 function initMiniGame() {
     girls = [];
     let correct = Math.floor(Math.random() * 4);
@@ -115,14 +90,10 @@ function initMiniGame() {
         girls.push({ x: 10 + i * 195, y: 160, w: 190, h: 270, img: isR ? girlRealImg : trolls[tCount++], isReal: isR });
     }
 }
-    function resetM2() {
-    planeY = 300; 
-    obstacles = []; 
-    progress = 0; 
-    gameOverM2 = false;
-    planeSpeedBase = 1; // Reset tốc độ về ban đầu để chơi lại từ từ
-    flagScale = 1.8; // Đảm bảo cờ luôn to chà bá khi chơi lại
-    lastCloudTime = 0;
+
+function resetM2() {
+    planeY = 300; obstacles = []; progress = 0; gameOverM2 = false;
+    planeSpeedBase = 1; isCelebrating = false; fireworks = []; lastCloudTime = 0;
 }
 
 canvas.addEventListener("mousedown", (e) => {
@@ -134,18 +105,15 @@ canvas.addEventListener("mousedown", (e) => {
         money++; animTime = 12;
         hitSound.currentTime = 0; hitSound.play().catch(()=>{});
         for(let i=0; i<6; i++) particles.push({x: 400, y: 300, sx: (Math.random()-0.5)*12, sy: (Math.random()-1)*15, life: 1});
-        if (money >= targetMoney) startTransition("GOT ENOUGH!LET'S GO✈️", 2, 120);
+        if (money >= targetMoney) startTransition("GOT ENOUGH! LET'S GO ✈️", 2, 120);
     } 
-    else if (scene === 2 && gameOverM2) { planeY = 300; obstacles = []; progress = 0; gameOverM2 = false; planeSpeedBase = 1; // THÊM DÒNG NÀY ĐỂ RESET TỐC ĐỘ
-    }
+    else if (scene === 2 && gameOverM2) { resetM2(); }
     else if (scene === 2.5) {
         girls.forEach(g => {
             if (mx > g.x && mx < g.x + 190 && my > g.y && my < g.y + 270) {
                 if (g.isReal) { 
                     feedbackText = "THAT'S RIGHT! 💖"; feedbackTime = 60;
-                    setTimeout(() => { 
-                        startTransition(<p>"FINALLY... THIS MOMENT... "<br>"I HAVE BEEN WAITING FOR SO LONG,"<br> "I HOPE IT WILL NEVER END...", 3, 600); 
-                    }, 1000);
+                    setTimeout(() => { startTransition("FINALLY... THIS MOMENT... I HAVE BEEN WAITING FOR SO LONG", 3, 300); }, 1000);
                 } else { feedbackText = "WRONG! 😭 REPICK!"; feedbackTime = 60; }
             }
         });
@@ -153,67 +121,31 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 function draw() {
-    // XỬ LÝ CHUYỂN CẢNH (TYPING)
- if (isTransition) {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, 800, 500);
-        
+    if (isTransition) {
+        ctx.fillStyle = "black"; ctx.fillRect(0, 0, 800, 500);
         let currentDisplay = transitionText.substring(0, Math.floor(typingIdx));
-        
-        // 1. CHỈ PHÁT SOUND KHI ĐANG GÕ CHỮ
         if (typingIdx < transitionText.length) {
             typingIdx += 0.2; 
             if (Math.floor(typingIdx) > Math.floor(typingIdx - 0.2)) {
-                typeSound.volume = 1.0; // Đảm bảo có tiếng khi gõ
-                typeSound.currentTime = 0;
-                typeSound.play().catch(()=>{});
+                typeSound.volume = 1.0; typeSound.currentTime = 0; typeSound.play().catch(()=>{});
             }
-        } else {
-            // 2. KHI CHỮ ĐÃ HIỆN XONG: ÉP ÂM LƯỢNG VỀ 0 NGAY
-            typeSound.volume = 0;
-            typeSound.pause();
-        }
-
-        // 3. KHI SẮP HẾT 2S HOẶC 10S: KHÔNG CHO PHÁP KÊU NỮA
-        if (transitionTimer < 20) {
-            typeSound.volume = 0;
-            typeSound.pause();
-            typeSound.currentTime = 0;
-        }
-
-        ctx.fillStyle = "white";
-        ctx.font = "14px 'Press Start 2P'";
-        ctx.textAlign = "center";
-        ctx.fillText(currentDisplay, 400, 250);
-        ctx.textAlign = "left"; 
-
+        } else { typeSound.volume = 0; typeSound.pause(); }
+        if (transitionTimer < 20) { typeSound.volume = 0; typeSound.pause(); }
+        ctx.fillStyle = "white"; ctx.font = "14px 'Press Start 2P'"; ctx.textAlign = "center";
+        ctx.fillText(currentDisplay, 400, 250); ctx.textAlign = "left"; 
         transitionTimer--;
-
-        // 4. KHI CHÍNH THỨC SANG MÀN MỚI
         if (transitionTimer <= 0) {
-            isTransition = false;
-            scene = nextScene;
-            
-            // Cú chốt: Xóa sổ âm thanh typing
-            typeSound.pause();
-            typeSound.volume = 0; 
-            typeSound.src = ""; // Xóa nguồn phát để trình duyệt giải phóng bộ nhớ sound này
-            typeSound.load();   // Reset lại đối tượng sound
-            
-            // Nếu là màn 3 thì mới bật nhạc lãng mạn
-            if (scene === 3) {
-                romanticMusic.play().catch(()=>{});
-            }
+            isTransition = false; scene = nextScene;
+            typeSound.pause(); typeSound.src = "";
+            if (scene === 3) romanticMusic.play().catch(()=>{});
         }
-        requestAnimationFrame(draw);
-        return; 
+        requestAnimationFrame(draw); return; 
     }
-    ctx.clearRect(0, 0, 800, 500);
-    ctx.font = "12px 'Press Start 2P'";
 
+    ctx.clearRect(0, 0, 800, 500);
     if (scene === 1) {
         if (bg1Img.complete) ctx.drawImage(bg1Img, 0, 0, 800, 500);
-        ctx.fillStyle = "gold"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
+        ctx.fillStyle = "gold"; ctx.font = "12px 'Press Start 2P'"; ctx.fillText("MONEY: $" + money + " / " + targetMoney, 30, 50);
         particles.forEach((p, i) => {
             ctx.globalAlpha = p.life; ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 8, 8);
             p.x += p.sx; p.y += p.sy; p.sy += 0.5; p.life -= 0.02;
@@ -224,163 +156,63 @@ function draw() {
         if (img.complete) ctx.drawImage(img, 220, 140, 360, 360);
         if (animTime > 0) animTime--;
     }
- else if (scene === 2) {
+    else if (scene === 2) {
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
-        
-        if (!gameOverM2) {
-            // --- TĂNG TỐC ĐỘ THEO THỜI GIAN ---
-            // Càng đi, planeSpeedBase càng tăng từ 1 lên khoảng 2.5
-            planeSpeedBase += 0.0015; 
-
-            // Tính toán progress: 100% / (15s * 60fps) * Hệ số tốc độ
-            // Tốc độ km sẽ nhanh dần đều
+        if (!gameOverM2 && !isCelebrating) {
+            planeSpeedBase += 0.0015;
             progress += (100 / (15 * 60)) * planeSpeedBase; 
-            
             let distanceKM = Math.max(0, Math.floor(1300 - (progress * 13)));
-
-            // Điều khiển máy bay (Má tăng độ nhạy phím để con né mây lúc nhanh)
-            let currentPlaneSpeed = 6 * planeSpeedBase;
-            if (keys["ArrowUp"]) planeY -= currentPlaneSpeed;
-            if (keys["ArrowDown"]) planeY += currentPlaneSpeed;
+            if (keys["ArrowUp"]) planeY -= 6 * planeSpeedBase;
+            if (keys["ArrowDown"]) planeY += 6 * planeSpeedBase;
             planeY = Math.max(0, Math.min(400, planeY));
 
             let currentTime = Date.now();
-            // Mây cũng sẽ xuất hiện nhanh hơn và bay nhanh hơn theo máy bay
-            if (progress < 90 && (currentTime - lastCloudTime) > (2000 / planeSpeedBase)) { 
-                if (Math.random() < 0.3) {
-                    let scale = 0.6 + Math.random() * 1.0;
-                    obstacles.push({
-                        x: 800, 
-                        y: 50 + Math.random() * 350, 
-                        w: 120 * scale, 
-                        h: 70 * scale,
-                        speed: (3 + Math.random() * 2) * planeSpeedBase, // Mây bay nhanh dần theo máy bay
-                        imgIndex: Math.floor(Math.random() * 3)
-                    });
-                    lastCloudTime = currentTime; 
-                }
+            if (progress < 90 && (currentTime - lastCloudTime) > (2000 / planeSpeedBase)) {
+                obstacles.push({ x: 800, y: 50 + Math.random() * 350, w: 100, h: 60, speed: (3 + Math.random() * 2) * planeSpeedBase, imgIndex: Math.floor(Math.random() * 3) });
+                lastCloudTime = currentTime;
             }
-
-            // Vẽ mây và check va chạm
             obstacles.forEach((o, i) => {
                 o.x -= o.speed;
-                let cImg = cloudSprites[o.imgIndex];
-                if (cImg.complete) ctx.drawImage(cImg, o.x, o.y, o.w, o.h);
-                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) {
-                    gameOverM2 = true; planeSpeedBase = 1; // Reset ngay khi vừa đâm
-                }
+                if (cloudSprites[o.imgIndex].complete) ctx.drawImage(cloudSprites[o.imgIndex], o.x, o.y, o.w, o.h);
+                if (o.x < planeX + 130 && o.x + o.w > planeX + 30 && o.y < planeY + 80 && o.y + o.h > planeY + 30) gameOverM2 = true;
                 if (o.x < -300) obstacles.splice(i, 1);
             });
-
-            // Hiển thị Distance
-            ctx.fillStyle = "white";
-            ctx.font = "16px 'Press Start 2P'";
-            ctx.fillText("DISTANCE: " + distanceKM + " KM", 30, 50);
-            ctx.font = "10px 'Press Start 2P'";
-            ctx.fillText("SPEED: " + Math.floor(planeSpeedBase * 800) + " KM/H", 30, 80);
-
-            // Về đích
-// --- XỬ LÝ VỀ ĐÍCH: CỜ TO VÀ THẤP ---
+            ctx.fillStyle = "white"; ctx.fillText("DISTANCE: " + distanceKM + " KM", 30, 50);
+            
             if (progress >= 95) {
-                // Cờ hiện ra nhanh hơn theo máy bay
-                let flagX = 800 - (progress - 95) * 150 * planeSpeedBase; 
+                let flagW = 150 * flagScale, flagH = 100 * flagScale, flagY = 500 - flagH;
+                let flagX = 800 - (progress - 95) * 150 * planeSpeedBase;
                 flagAnimTime++;
                 let cFlag = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
-                
-                if (cFlag.complete) {
-                    // Tính toán kích thước cờ to ra
-                    let flagW = 150 * flagScale; // Chiều rộng mới
-                    let flagH = 100 * flagScale; // Chiều cao mới
-
-                    // Tính toán vị trí Y: Nằm sát mép dưới (500 là chiều cao canvas)
-                    let flagY = 500 - flagH; 
-                    
-                    // Vẽ cây cờ to và thấp
-                    ctx.drawImage(cFlag, flagX, flagY, flagW, flagH);
-
-                    // Check va chạm với cờ: Cần điều chỉnh phạm vi va chạm cho cờ to
-                 // --- XỬ LÝ CHẠM CỜ: NỔ PHÁO HOA TƯNG BỪNG ---
-            if (flagX <= planeX + 130 && planeY + 80 >= flagY && !isCelebrating) { 
-                // 1. Kích hoạt chế độ ăn mừng
-                isCelebrating = true;
-                celebrationTimer = 300; // 300 khung hình = 5 giây (60fps * 5)
-                planeSpeedBase = 1; // Reset tốc độ
-
-                                        
-                // 2. Tạo pháo hoa nổ ngay tại vị trí cờ
-                let fxCenter = flagX + flagW/2;
-                let fyCenter = flagY + flagH/2;
-                for (let i = 0; i < 100; i++) { // Tạo 100 hạt pháo hoa
-                    let angle = Math.random() * Math.PI * 2; // Góc bay ngẫu nhiên
-                    let speed = 5 + Math.random() * 8; // Tốc độ bay ngẫu nhiên
-                    fireworks.push({
-                        x: fxCenter,
-                        y: fyCenter,
-                        sx: Math.cos(angle) * speed, // Tốc độ X
-                        sy: Math.sin(angle) * speed, // Tốc độ Y
-                        life: 1, // Tuổi thọ hạt (1 = mới, 0 = biến mất)
-                        color: `hsl(${Math.random() * 360}, 100%, 50%)` // Màu ngẫu nhiên
-                    });
-                }
-
-                // 3. Phát âm thanh pháo hoa
-                fireworkSound.currentTime = 0;
-                fireworkSound.play().catch(()=>{});
-
-                // 4. Khởi tạo MiniGame nhưng CHƯA CHUYỂN MÀN
-                initMiniGame();
-            }
+                if (cFlag.complete) ctx.drawImage(cFlag, flagX, flagY, flagW, flagH);
+                if (flagX <= planeX + 130 && planeY + 80 >= flagY) {
+                    isCelebrating = true; celebrationTimer = 300; fireworkSound.play().catch(()=>{});
+                    for (let i = 0; i < 100; i++) {
+                        let angle = Math.random() * Math.PI * 2, speed = 5 + Math.random() * 8;
+                        fireworks.push({ x: flagX + flagW/2, y: flagY + flagH/2, sx: Math.cos(angle) * speed, sy: Math.sin(angle) * speed, life: 1, color: `hsl(${Math.random() * 360}, 100%, 50%)` });
+                    }
+                    initMiniGame();
                 }
             }
-        // Vẽ Máy bay & Chữ Crashed
-        if (gameOverM2) {
-            ctx.fillStyle = "red";
-            ctx.font = "20px 'Press Start 2P'";
-            ctx.fillText("CRASHED!", 320, 220);
-            planeSpeedBase = 1; // Reset tốc độ khi đâm
         }
+        if (gameOverM2) { ctx.fillStyle = "red"; ctx.font = "20px 'Press Start 2P'"; ctx.fillText("CRASHED!", 320, 220); }
         if (planeImg.complete) ctx.drawImage(planeImg, planeX, planeY, 180, 120);
-    }
-            // --- VẼ VÀ CẬP NHẬT PHÁO HOA ---
+
         if (isCelebrating) {
-            // Chặn máy bay di chuyển
-            planeY = planeY; 
-
-            // Cập nhật và vẽ từng hạt pháo hoa
             fireworks.forEach((p, i) => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); // Vẽ hạt tròn nhỏ
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life; // Độ mờ theo tuổi thọ
-                ctx.fill();
-                ctx.globalAlpha = 1;
-
-                p.x += p.sx; // Di chuyển X
-                p.y += p.sy; // Di chuyển Y
-                p.sy += 0.2; // Trọng lực nhẹ, pháo hoa rơi xuống
-                p.life -= 0.015; // Tuổi thọ giảm dần
-
-                if (p.life <= 0) fireworks.splice(i, 1); // Xóa hạt khi hết đời
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life; ctx.fill(); ctx.globalAlpha = 1;
+                p.x += p.sx; p.y += p.sy; p.sy += 0.2; p.life -= 0.015;
+                if (p.life <= 0) fireworks.splice(i, 1);
             });
-
-            // Hiển thị dòng chữ chúc mừng
-            ctx.fillStyle = "white";
-            ctx.font = "20px 'Press Start 2P'";
-            ctx.textAlign = "center";
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "20px 'Press Start 2P'";
             ctx.fillText("DESTINATION REACHED! 🎇", 400, 220);
-            ctx.font = "12px 'Press Start 2P'";
-            ctx.fillText("PREPARING TO LAND... " + Math.ceil(celebrationTimer/60) + "S", 400, 260);
+            ctx.font = "12px 'Press Start 2P'"; ctx.fillText("PREPARING TO LAND... " + Math.ceil(celebrationTimer/60) + "S", 400, 260);
             ctx.textAlign = "left";
-
-            // Đếm ngược 5 giây
             celebrationTimer--;
-            if (celebrationTimer <= 0) {
-                isCelebrating = false; // Reset chế độ ăn mừng
-                fireworks = []; // Xóa hết pháo hoa cũ
-                // CHÍNH THỨC CHUYỂN MÀN
-                startTransition("OH NO, SO CROWDED!!", 2.5, 120); 
-            }
+            if (celebrationTimer <= 0) { isCelebrating = false; startTransition("OH NO, SO CROWDED!!", 2.5, 120); }
         }
+    }
     else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
         if (feedbackTime > 0) { ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.fillText(feedbackText, 310, 130); feedbackTime--; }
@@ -395,17 +227,11 @@ function draw() {
     else if (scene === 3) {
         if (bg3Img.complete) ctx.drawImage(bg3Img, 0, 0, 800, 500);
         if (!met) {
-            boyX += 2.5; girlX -= 2.5;
-            if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
-            if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
-            if (boyX >= girlX - 180) {
-                met = true; document.getElementById('popup-overlay').style.display = 'flex';
-                romanticMusic.play().catch(()=>{});
-            }
-        } else {
-            if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
-            if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
+            boyX += 2; girlX -= 2;
+            if (boyX >= girlX - 180) { met = true; document.getElementById('popup-overlay').style.display = 'flex'; }
         }
+        if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
+        if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
     }
     requestAnimationFrame(draw);
 }
