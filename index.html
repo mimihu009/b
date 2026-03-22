@@ -105,7 +105,8 @@ let bg25Img = new Image(); bg25Img.src = "bg2_5.jpg";
 let bg3Img = new Image(); bg3Img.src = "bg3.jpg";
 let boyFinalImg = new Image(); boyFinalImg.src = "boy_final.png";
 let girlFinalImg = new Image(); girlFinalImg.src = "girl_final.png";
-
+let togetherImg = new Image(); 
+togetherImg.src = "together.png"; // Con nhớ đổi tên này đúng với file của con trên GitHub nha
 // --- 3 LOẠI MÂY ---
 let cloud1 = new Image(); cloud1.src = "cloud1.png";
 let cloud2 = new Image(); cloud2.src = "cloud2.png";
@@ -233,31 +234,80 @@ function draw() {
         ctx.fillStyle = "white"; ctx.fillText("WHO IS YOUR REAL LOVE? 😏", 220, 80);
         if (feedbackTime > 0) { ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.fillText(feedbackText, 310, 130); feedbackTime--; }
         
-        girls.forEach(g => {
-            if (g.img.complete) {
-                let ratio = g.img.naturalWidth / g.img.naturalHeight;
-                let dW = 170, dH = 170 / ratio;
-                if (dH > 250) { dH = 250; dW = dH * ratio; }
-                ctx.drawImage(g.img, g.x + (g.w-dW)/2, g.y + (g.h-dH)/2, dW, dH);
-                ctx.strokeStyle = "rgba(255, 182, 193, 0.5)"; ctx.strokeRect(g.x, g.y, 190, 270);
+girls.forEach(g => {
+            // TUYỆT ĐỐI KHÔNG VẼ NỀN HỒNG (fillRect)
+            // TUYỆT ĐỐI KHÔNG VẼ VIỀN (strokeRect) - BỎ LUÔN CÁI NÀY THEO Ý CON
+
+            if (g.img.complete && g.img.naturalWidth !== 0) {
+                let imgW = g.img.naturalWidth;
+                let imgH = g.img.naturalHeight;
+                let ratio = imgW / imgH;
+
+                let frameW = 190; 
+                let frameH = 270; 
+
+                let drawW, drawH;
+                if (ratio > frameW / frameH) {
+                    drawW = frameW - 20;
+                    drawH = drawW / ratio;
+                } else {
+                    drawH = frameH - 20;
+                    drawW = drawH * ratio;
+                }
+
+                // Căn giữa nhân vật vào đúng vị trí để click chuẩn
+                let drawX = g.x + (frameW - drawW) / 2;
+                let drawY = g.y + (frameH - drawH) / 2;
+
+                // CHỈ VẼ DUY NHẤT HÌNH NHÂN VẬT LÊN NỀN
+                ctx.drawImage(g.img, drawX, drawY, drawW, drawH);
+                
+            } else {
+                // Nếu ảnh chưa load kịp thì hiện chữ mờ để biết chỗ mà click
+                ctx.fillStyle = "rgba(255,255,255,0.1)";
+                ctx.fillText("LOADING...", g.x + 40, g.y + 100);
             }
         });
     }
 
-    // --- MÀN 3 ---
+  // --- MÀN 3: GẶP NHAU & TOGETHER ---
     else if (scene === 3) {
+        // Vẽ nền màn 3
         if (bg3Img.complete) ctx.drawImage(bg3Img, 0, 0, 800, 500);
+        else { ctx.fillStyle = "#ffb6c1"; ctx.fillRect(0, 0, 800, 500); }
+        
         if (!met) {
-            boyX += 2.5; girlX -= 2.5;
-            if (boyX >= girlX - 200) {
+            // Hai đứa đang đi bộ lại gần nhau
+            boyX += 2.5; 
+            girlX -= 2.5;
+            
+            // Vẽ Boy và Girl lúc đang đi
+            if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
+            if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
+
+            // Khi chạm nhau (khoảng cách 150-200 tùy con chỉnh)
+            if (boyX >= girlX - 180) {
                 met = true;
-                if (!hasShowedPopup) { document.getElementById('popup-overlay').style.display = 'flex'; romanticMusic.play().catch(()=>{}); hasShowedPopup = true; }
+                // Hiện Popup chúc mừng
+                if (!hasShowedPopup) {
+                    document.getElementById('popup-overlay').style.display = 'flex';
+                    romanticMusic.play().catch(()=>{});
+                    hasShowedPopup = true;
+                }
             }
-        } else { ctx.fillStyle = "white"; ctx.fillText("HAPPY ENDING! 💖", 310, 150); }
-        if (boyFinalImg.complete) ctx.drawImage(boyFinalImg, boyX, 175, 225, 225);
-        if (girlFinalImg.complete) ctx.drawImage(girlFinalImg, girlX, 175, 225, 225);
+        } else {
+            // --- KHI ĐÃ CHẠM NHAU: HIỆN HÌNH TOGETHER ---
+            if (togetherImg.complete) {
+                // Vẽ hình Together to đùng giữa màn hình (400x400 hoặc tùy ý con)
+                // Căn giữa: (800-500)/2 = 150, (500-450)/2 = 25
+                ctx.drawImage(togetherImg, 150, 25, 500, 450);
+            } else {
+                // Nếu ảnh chưa load thì hiện chữ tạm
+                ctx.fillStyle = "white";
+                ctx.font = "20px 'Press Start 2P'";
+                ctx.fillText("HAPPY BIRTHDAY TOGETHER! 💖", 180, 250);
+            }
+        }
     }
-    requestAnimationFrame(draw);
-}
 draw();
 </script>
