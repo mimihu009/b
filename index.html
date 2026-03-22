@@ -206,12 +206,16 @@ function draw() {
             if (keys["ArrowDown"]) planeY += 6;
             planeY = Math.max(0, Math.min(400, planeY));
 
-            // Tạo mây
-            if (progress < 90 && Math.random() < 0.05) {
+          // Tần suất tạo mây (Giảm từ 0.05 xuống 0.02 cho dễ thở)
+            if (progress < 90 && Math.random() < 0.02) { 
                 let scale = 0.6 + Math.random() * 1.2;
                 obstacles.push({
-                    x: 800, y: Math.random() * 400, w: 120 * scale, h: 70 * scale,
-                    speed: 5 + Math.random() * 5, imgIndex: Math.floor(Math.random() * 3)
+                    x: 800, 
+                    y: Math.random() * 400, 
+                    w: 120 * scale, 
+                    h: 70 * scale,
+                    speed: 3 + Math.random() * 3, // Má cũng giảm nhẹ tốc độ bay của mây luôn
+                    imgIndex: Math.floor(Math.random() * 3)
                 });
             }
 
