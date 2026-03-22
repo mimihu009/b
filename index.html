@@ -58,9 +58,7 @@ let girlTroll3Img = new Image(); girlTroll3Img.src = "girl_troll3.png";
 // --- KHAI BÁO 2 ẢNH FLAG ĐỂ CHUYỂN ĐỘNG ---
 let flag1Img = new Image(); flag1Img.src = "flag1.png";
 let flag2Img = new Image(); flag2Img.src = "flag2.png";
-
-// Biến để đếm thời gian chuyển đổi ảnh flag
-let flagAnimTime = 0;
+let flagAnimTime = 0; // Cực kỳ quan trọng, thiếu cái này là game đứng hình!
 // --- KHAI BÁO ẢNH BACKGROUND (NHỚ ĐÚNG TÊN FILE TRÊN GITHUB) ---
 let bg1Img = new Image(); bg1Img.src = "bg1.jpg";
 let bg2Img = new Image(); bg2Img.src = "bg2.jpg";
@@ -122,8 +120,6 @@ canvas.addEventListener("mousedown", (e) => {
         });
     }
 });
-
-// ===== 4. VÒNG LẶP VẼ =====
 // ===== 4. VÒNG LẶP VẼ CHÍNH =====
 function draw() {
     ctx.clearRect(0, 0, 800, 500);
@@ -151,87 +147,80 @@ function draw() {
     }
 
     // --- MÀN 2: BAY ---
-else if (scene === 2) {
-        // Vẽ nền
+    else if (scene === 2) {
+        // 1. Vẽ nền
         if (bg2Img.complete) ctx.drawImage(bg2Img, 0, 0, 800, 500);
         else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, 800, 500); }
 
         if (!gameOverM2) {
-            progress += 0.2; // Quãng đường bay
+            progress += 0.2; 
 
-            // --- ĐIỀU KHIỂN BẰNG PHÍM MŨI TÊN ---
+            // Đảm bảo planeX có giá trị khởi đầu
+            if (typeof planeX === 'undefined') planeX = 80;
+
+            // 2. ĐIỀU KHIỂN
             if (keys["ArrowUp"] || keys["KeyW"]) planeY -= 5;
             if (keys["ArrowDown"] || keys["KeyS"]) planeY += 5;
-            if (keys["ArrowLeft"] || keys["KeyA"]) planeX = Math.max(0, (planeX || 80) - 5); // Nếu con muốn di chuyển trái phải
-            if (keys["ArrowRight"] || keys["KeyD"]) planeX = Math.min(600, (planeX || 80) + 5);
+            if (keys["ArrowLeft"] || keys["KeyA"]) planeX = Math.max(0, planeX - 5);
+            if (keys["ArrowRight"] || keys["KeyD"]) planeX = Math.min(600, planeX + 5);
 
-            // Giới hạn biên màn hình
             if (planeY < 0) planeY = 0;
             if (planeY > 440) planeY = 440;
 
-            // Tạo mây (vật cản)
+            // 3. TẠO MÂY
             if (progress < 90 && Math.random() < 0.04) {
                 obstacles.push({x: 800, y: Math.random() * 450, w: 90, h: 50});
             }
 
-            // Kiểm tra va chạm
+            // 4. XỬ LÝ MÂY & VA CHẠM
             obstacles.forEach((o, i) => {
                 o.x -= 6;
                 ctx.fillStyle = "rgba(255,255,255,0.8)";
                 ctx.fillRect(o.x, o.y, o.w, o.h);
 
-                // Va chạm chuẩn (pixelated style)
-                let pX = (planeX || 80);
-                if (o.x < pX + 100 && o.x + o.w > pX + 20 && o.y < planeY + 60 && o.y + o.h > planeY + 20) {
+                if (o.x < planeX + 100 && o.x + o.w > planeX + 20 && o.y < planeY + 60 && o.y + o.h > planeY + 20) {
                     gameOverM2 = true;
                 }
                 if (o.x < -100) obstacles.splice(i, 1);
             });
-          // --- XUẤT HIỆN NGỌN CỜ KHI GẦN VỀ ĐÍCH (95%) ---
+
+            // 5. XUẤT HIỆN CỜ KHI GẦN VỀ ĐÍCH (95%)
             if (progress >= 95) {
-                // Ngọn cờ chạy từ phải sang trái
-                let flagX = 800 - (progress - 95) * 60; // Tốc độ cờ chạy lại gần
+                let flagX = 800 - (progress - 95) * 150; // Tăng tốc độ cờ chạy ra cho rõ
                 
-                // --- CHUYỂN ĐỘNG CỜ PHẤP PHỚI ---
-                let currentFlag;
-                // Cứ mỗi 20 khung hình, đổi ảnh 1 lần
-                if (flagAnimTime % 40 < 20) {
-                    currentFlag = flag1Img; // 20 khung hình đầu: Vẽ ảnh 1
+                if (typeof flagAnimTime !== 'undefined') flagAnimTime++; 
+                else flagAnimTime = 0;
+
+                let currentFlagImg = (Math.floor(flagAnimTime / 15) % 2 === 0) ? flag1Img : flag2Img;
+
+                if (currentFlagImg.complete && currentFlagImg.naturalWidth !== 0) {
+                    ctx.drawImage(currentFlagImg, flagX, 150, 120, 120);
                 } else {
-                    currentFlag = flag2Img; // 20 khung hình sau: Vẽ ảnh 2
-                }
-                flagAnimTime++; // Tăng biến đếm thời gian
-                
-                // Vẽ ảnh cờ hiện tại
-                if (currentFlag.complete) {
-                    ctx.drawImage(currentFlag, flagX, 200, 100, 100);
-                } else {
-                    // Dự phòng nếu lỗi ảnh (vẽ hình chữ nhật màu đỏ tạm thời)
-                    ctx.fillStyle = "red"; ctx.fillRect(flagX, 200, 30, 100); 
+                    ctx.fillStyle = "red"; ctx.fillRect(flagX, 150, 10, 100);
+                    ctx.fillStyle = "white"; ctx.fillText("🚩", flagX + 15, 180);
                 }
 
-                // Nếu máy bay chạm cờ -> THẮNG MÀN 2
-                if (flagX <= 180) { // Máy bay ở x=80, chiều rộng 120 -> Đầu máy bay ở x=200. Chạm ở 180 là hợp lý.
+                // Chạm cờ để qua màn (Đầu máy bay chạm cột cờ)
+                if (flagX <= planeX + 100) {
                     scene = 2.5;
                     initMiniGame();
                 }
             }
         }
 
-        // Vẽ máy bay
+        // 6. VẼ MÁY BAY
         ctx.save();
         if (gameOverM2) ctx.globalAlpha = 0.5;
-        if (planeImg.complete) ctx.drawImage(planeImg, (planeX || 80), planeY, 120, 80);
+        ctx.drawImage(planeImg, (typeof planeX !== 'undefined' ? planeX : 80), planeY, 120, 80);
         ctx.restore();
 
-        // UI
+        // 7. UI
         ctx.fillStyle = "white";
         ctx.fillText("DISTANCE: " + Math.floor(progress) + "%", 30, 50);
-        ctx.fillText("USE ARROWS TO FLY! ⬆️⬇️", 270, 480);
-
         if (gameOverM2) {
-            ctx.fillStyle = "red";
-            ctx.fillText("CRASHED! PRESS CLICK TO RETRY", 200, 250);
+            ctx.fillStyle = "red"; ctx.fillText("CRASHED! CLICK TO RETRY", 200, 250);
+        } else {
+            ctx.fillText("USE ARROWS TO FLY! ⬆️⬇️", 270, 480);
         }
     }
 
