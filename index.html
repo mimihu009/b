@@ -206,20 +206,38 @@ function draw() {
                 if (p.life <= 0) fireworks.splice(i, 1);
             });
             ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "20px 'Press Start 2P'";
-            ctx.fillText("DESTINATION REACHED! 🎇", 400, 220);
+            ctx.fillText("DESTINATION REACHED!", 400, 220);
             ctx.font = "12px 'Press Start 2P'"; ctx.fillText("PREPARING TO LAND... " + Math.ceil(celebrationTimer/60) + "S", 400, 260);
             ctx.textAlign = "left";
             celebrationTimer--;
             if (celebrationTimer <= 0) { isCelebrating = false; startTransition("OH NO, SO CROWDED!!", 2.5, 120); }
         }
     }
-    else if (scene === 2.5) {
+else if (scene === 2.5) {
         if (bg25Img.complete) ctx.drawImage(bg25Img, 0, 0, 800, 500);
-        if (feedbackTime > 0) { ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; ctx.fillText(feedbackText, 310, 130); feedbackTime--; }
+
+        // --- ĐÂY, DÒNG CHỮ CON CẦN ĐÂY ---
+        ctx.fillStyle = "white";
+        ctx.font = "20px 'Press Start 2P'";
+        ctx.textAlign = "center";
+        ctx.fillText("CHOOSE THE RIGHT ONE??🤔")
+        ctx.textAlign = "left"; // Reset lại để không lệch các chữ khác
+
+        // Hiển thị thông báo Đúng/Sai
+        if (feedbackTime > 0) { 
+            ctx.fillStyle = feedbackText.includes("WRONG") ? "red" : "lime"; 
+            ctx.textAlign = "center";
+            ctx.fillText(feedbackText, 400, 130); 
+            ctx.textAlign = "left";
+            feedbackTime--; 
+        }
+
+        // Vẽ các cô gái
         girls.forEach(g => {
             if (g.img.complete) {
                 let r = g.img.naturalWidth / g.img.naturalHeight;
-                let dW = 170, dH = 170/r; if (dH > 250) { dH = 250; dW = dH * r; }
+                let dW = 170, dH = 170/r; 
+                if (dH > 250) { dH = 250; dW = dH * r; }
                 ctx.drawImage(g.img, g.x + (190-dW)/2, g.y + (270-dH)/2, dW, dH);
             }
         });
